@@ -1,5 +1,5 @@
 """Tennis Video Classification Dataset"""
-from absl import app, flags, logging
+from absl import app, logging
 import cv2
 import math
 import mxnet as mx
@@ -383,8 +383,8 @@ class TennisSet:
                         labels[v][max_f + i] = 'OTH'
 
             # verify images exist, if not try and extract, if not again then ignore
-            for i in range(2
-                          ):  # go around twice, so if not all samples found extract, then re-check
+            # go around twice, so if not all samples found extract, then re-check
+            for i in range(2):
                 samples_exist = list()
                 samples_exist_flag = True
 
@@ -424,7 +424,7 @@ class TennisSet:
             for video in videos:
                 with open(os.path.join(self._labels_dir, video + '.txt'), 'r') as f:
                     lines = f.readlines()
-                    lines = [l.rstrip().split() for l in lines]
+                    lines = [line.rstrip().split() for line in lines]
 
                 for line in lines:
                     labels[video][int(line[0])] = line[1]
@@ -459,15 +459,15 @@ class TennisSet:
             # let's make up the points data
             with open(os.path.join(self._annotations_dir, 'points.txt'), 'r') as f:
                 lines = f.readlines()
-            points = [l.rstrip().split() for l in lines]
+            points = [line.rstrip().split() for line in lines]
 
             # add caps
             with open(os.path.join(self._annotations_dir, 'captions.txt'), 'r') as f:
                 lines = f.readlines()
-                lines = [l.rstrip().split('\t') for l in lines]
+                lines = [line.rstrip().split('\t') for line in lines]
             caps = dict()
-            for l in lines:
-                caps[l[0]] = l[1]
+            for line in lines:
+                caps[line[0]] = line[1]
             for i in range(len(points)):
                 points[i].append(caps[points[i][0]])
 
