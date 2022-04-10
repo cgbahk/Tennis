@@ -1,0 +1,11 @@
+__pycache__
+
+/venv
+
+/models/vision/experiments/00*
+
+/data/annotations/
+/data/features/
+/data/frames/
+/data/splits/
+/data/videos/
