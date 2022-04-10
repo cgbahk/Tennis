@@ -95,6 +95,7 @@ class TennisSet:
             self._samples = self._balance_classes()
 
     def get_captions(self, ids=False, split=False):
+        assert self._captions
         caps = list()
         for i in range(len(self)):
             point_id = self._samples[i]
@@ -456,26 +457,27 @@ class TennisSet:
 
                 events.append([video, start_frame, last_frame, cur_class])  # add the last event
 
-            # let's make up the points data
-            with open(os.path.join(self._annotations_dir, 'points.txt'), 'r') as f:
-                lines = f.readlines()
-            points = [line.rstrip().split() for line in lines]
-
-            # add caps
-            with open(os.path.join(self._annotations_dir, 'captions.txt'), 'r') as f:
-                lines = f.readlines()
-                lines = [line.rstrip().split('\t') for line in lines]
-            caps = dict()
-            for line in lines:
-                caps[line[0]] = line[1]
-            for i in range(len(points)):
-                points[i].append(caps[points[i][0]])
-
-            # filter out points not in this split
             points_dict = dict()
-            for point in points:
-                if point[1] in videos and int(point[2]) in in_set[point[1]]:
-                    points_dict[point[0]] = point[1:]
+            if self._captions:
+                # let's make up the points data
+                with open(os.path.join(self._annotations_dir, 'points.txt'), 'r') as f:
+                    lines = f.readlines()
+                points = [line.rstrip().split() for line in lines]
+
+                # add caps
+                with open(os.path.join(self._annotations_dir, 'captions.txt'), 'r') as f:
+                    lines = f.readlines()
+                    lines = [line.rstrip().split('\t') for line in lines]
+                caps = dict()
+                for line in lines:
+                    caps[line[0]] = line[1]
+                for i in range(len(points)):
+                    points[i].append(caps[points[i][0]])
+
+                # filter out points not in this split
+                for point in points:
+                    if point[1] in videos and int(point[2]) in in_set[point[1]]:
+                        points_dict[point[0]] = point[1:]
 
             return samples, videos, events, points_dict
         else:
