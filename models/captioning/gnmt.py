@@ -68,11 +68,22 @@ class GNMTEncoder(Seq2SeqEncoder):
         Container for weight sharing between cells.
         Created if `None`.
     """
-    def __init__(self, cell_type='lstm', num_layers=2, num_bi_layers=1, hidden_size=128,
-                 dropout=0.0, use_residual=True,
-                 i2h_weight_initializer=None, h2h_weight_initializer=None,
-                 i2h_bias_initializer='zeros', h2h_bias_initializer='zeros',
-                 prefix=None, params=None):
+
+    def __init__(
+        self,
+        cell_type='lstm',
+        num_layers=2,
+        num_bi_layers=1,
+        hidden_size=128,
+        dropout=0.0,
+        use_residual=True,
+        i2h_weight_initializer=None,
+        h2h_weight_initializer=None,
+        i2h_bias_initializer='zeros',
+        h2h_bias_initializer='zeros',
+        prefix=None,
+        params=None
+    ):
         super(GNMTEncoder, self).__init__(prefix=prefix, params=params)
         self._cell_type = _get_cell_type(cell_type)
         assert num_bi_layers <= num_layers,\
@@ -88,27 +99,37 @@ class GNMTEncoder(Seq2SeqEncoder):
             self.rnn_cells = nn.HybridSequential()
             for i in range(num_layers):
                 if i < num_bi_layers:
-                    self.rnn_cells.add(rnn.BidirectionalCell(
-                        l_cell=self._cell_type(hidden_size=self._hidden_size,
-                                               i2h_weight_initializer=i2h_weight_initializer,
-                                               h2h_weight_initializer=h2h_weight_initializer,
-                                               i2h_bias_initializer=i2h_bias_initializer,
-                                               h2h_bias_initializer=h2h_bias_initializer,
-                                               prefix='rnn%d_l_' % i),
-                        r_cell=self._cell_type(hidden_size=self._hidden_size,
-                                               i2h_weight_initializer=i2h_weight_initializer,
-                                               h2h_weight_initializer=h2h_weight_initializer,
-                                               i2h_bias_initializer=i2h_bias_initializer,
-                                               h2h_bias_initializer=h2h_bias_initializer,
-                                               prefix='rnn%d_r_' % i)))
+                    self.rnn_cells.add(
+                        rnn.BidirectionalCell(
+                            l_cell=self._cell_type(
+                                hidden_size=self._hidden_size,
+                                i2h_weight_initializer=i2h_weight_initializer,
+                                h2h_weight_initializer=h2h_weight_initializer,
+                                i2h_bias_initializer=i2h_bias_initializer,
+                                h2h_bias_initializer=h2h_bias_initializer,
+                                prefix='rnn%d_l_' % i
+                            ),
+                            r_cell=self._cell_type(
+                                hidden_size=self._hidden_size,
+                                i2h_weight_initializer=i2h_weight_initializer,
+                                h2h_weight_initializer=h2h_weight_initializer,
+                                i2h_bias_initializer=i2h_bias_initializer,
+                                h2h_bias_initializer=h2h_bias_initializer,
+                                prefix='rnn%d_r_' % i
+                            )
+                        )
+                    )
                 else:
                     self.rnn_cells.add(
-                        self._cell_type(hidden_size=self._hidden_size,
-                                        i2h_weight_initializer=i2h_weight_initializer,
-                                        h2h_weight_initializer=h2h_weight_initializer,
-                                        i2h_bias_initializer=i2h_bias_initializer,
-                                        h2h_bias_initializer=h2h_bias_initializer,
-                                        prefix='rnn%d_' % i))
+                        self._cell_type(
+                            hidden_size=self._hidden_size,
+                            i2h_weight_initializer=i2h_weight_initializer,
+                            h2h_weight_initializer=h2h_weight_initializer,
+                            i2h_bias_initializer=i2h_bias_initializer,
+                            h2h_bias_initializer=h2h_bias_initializer,
+                            prefix='rnn%d_' % i
+                        )
+                    )
 
     def __call__(self, inputs, states=None, valid_length=None):
         """Encoder the inputs given the states and valid sequence length.
@@ -141,8 +162,13 @@ class GNMTEncoder(Seq2SeqEncoder):
         for i, cell in enumerate(self.rnn_cells):
             begin_state = None if states is None else states[i]
             outputs, layer_states = cell.unroll(
-                length=length, inputs=inputs, begin_state=begin_state, merge_outputs=True,
-                valid_length=valid_length, layout='NTC')
+                length=length,
+                inputs=inputs,
+                begin_state=begin_state,
+                merge_outputs=True,
+                valid_length=valid_length,
+                layout='NTC'
+            )
             if i < self._num_bi_layers:
                 # For bidirectional RNN, we use the states of the backward RNN
                 new_states.append(layer_states[len(self.rnn_cells[i].state_info()) // 2:])
@@ -155,8 +181,9 @@ class GNMTEncoder(Seq2SeqEncoder):
                     outputs = outputs + inputs
             inputs = outputs
         if valid_length is not None:
-            outputs = mx.nd.SequenceMask(outputs, sequence_length=valid_length,
-                                         use_sequence_length=True, axis=1)
+            outputs = mx.nd.SequenceMask(
+                outputs, sequence_length=valid_length, use_sequence_length=True, axis=1
+            )
         return [outputs, new_states], []
 
 
@@ -195,12 +222,23 @@ class GNMTDecoder(HybridBlock, Seq2SeqDecoder):
         Container for weight sharing between cells.
         Created if `None`.
     """
-    def __init__(self, cell_type='lstm', attention_cell='scaled_luong',
-                 num_layers=2, hidden_size=128,
-                 dropout=0.0, use_residual=True, output_attention=False,
-                 i2h_weight_initializer=None, h2h_weight_initializer=None,
-                 i2h_bias_initializer='zeros', h2h_bias_initializer='zeros',
-                 prefix=None, params=None):
+
+    def __init__(
+        self,
+        cell_type='lstm',
+        attention_cell='scaled_luong',
+        num_layers=2,
+        hidden_size=128,
+        dropout=0.0,
+        use_residual=True,
+        output_attention=False,
+        i2h_weight_initializer=None,
+        h2h_weight_initializer=None,
+        i2h_bias_initializer='zeros',
+        h2h_bias_initializer='zeros',
+        prefix=None,
+        params=None
+    ):
         super(GNMTDecoder, self).__init__(prefix=prefix, params=params)
         self._cell_type = _get_cell_type(cell_type)
         self._num_layers = num_layers
@@ -214,12 +252,15 @@ class GNMTDecoder(HybridBlock, Seq2SeqDecoder):
             self.rnn_cells = nn.HybridSequential()
             for i in range(num_layers):
                 self.rnn_cells.add(
-                    self._cell_type(hidden_size=self._hidden_size,
-                                    i2h_weight_initializer=i2h_weight_initializer,
-                                    h2h_weight_initializer=h2h_weight_initializer,
-                                    i2h_bias_initializer=i2h_bias_initializer,
-                                    h2h_bias_initializer=h2h_bias_initializer,
-                                    prefix='rnn%d_' % i))
+                    self._cell_type(
+                        hidden_size=self._hidden_size,
+                        i2h_weight_initializer=i2h_weight_initializer,
+                        h2h_weight_initializer=h2h_weight_initializer,
+                        i2h_bias_initializer=i2h_bias_initializer,
+                        h2h_bias_initializer=h2h_bias_initializer,
+                        prefix='rnn%d_' % i
+                    )
+                )
 
     def init_state_from_encoder(self, encoder_outputs, encoder_valid_length=None):
         """Initialize the state from the encoder outputs.
@@ -247,7 +288,8 @@ class GNMTDecoder(HybridBlock, Seq2SeqDecoder):
         if encoder_valid_length is not None:
             mem_masks = mx.nd.broadcast_lesser(
                 mx.nd.arange(mem_length, ctx=encoder_valid_length.context).reshape((1, -1)),
-                encoder_valid_length.reshape((-1, 1)))
+                encoder_valid_length.reshape((-1, 1))
+            )
             decoder_states.append(mem_masks)
         return decoder_states
 
@@ -293,17 +335,18 @@ class GNMTDecoder(HybridBlock, Seq2SeqDecoder):
             additional_outputs.extend(ele_additional_outputs)
         output = mx.nd.stack(*output, axis=1)
         if valid_length is not None:
-            states = [_nested_sequence_last(rnn_states_l, valid_length),
-                      _nested_sequence_last(attention_output_l, valid_length)] + fixed_states
-            output = mx.nd.SequenceMask(output,
-                                        sequence_length=valid_length,
-                                        use_sequence_length=True,
-                                        axis=1)
+            states = [
+                _nested_sequence_last(rnn_states_l, valid_length),
+                _nested_sequence_last(attention_output_l, valid_length)
+            ] + fixed_states
+            output = mx.nd.SequenceMask(
+                output, sequence_length=valid_length, use_sequence_length=True, axis=1
+            )
         if self._output_attention:
             additional_outputs = [mx.nd.concat(*additional_outputs, dim=-2)]
         return output, states, additional_outputs
 
-    def __call__(self, step_input, states): #pylint: disable=arguments-differ
+    def __call__(self, step_input, states):  #pylint: disable=arguments-differ
         """One-step-ahead decoding of the GNMT decoder.
 
         Parameters
@@ -390,8 +433,9 @@ class GNMTDecoder(HybridBlock, Seq2SeqDecoder):
             rnn_cell = self.rnn_cells[i]
             # Concatenate the attention vector calculated by the bottom layer and the output of the
             # previous layer
-            rnn_out, layer_state = rnn_cell(F.concat(curr_input, attention_vec, dim=-1),
-                                            rnn_states[i])
+            rnn_out, layer_state = rnn_cell(
+                F.concat(curr_input, attention_vec, dim=-1), rnn_states[i]
+            )
             rnn_out = self.dropout_layer(rnn_out)
             if self._use_residual:
                 rnn_out = rnn_out + curr_input
@@ -404,12 +448,21 @@ class GNMTDecoder(HybridBlock, Seq2SeqDecoder):
         return rnn_out, new_states, step_additional_outputs
 
 
-def get_gnmt_encoder_decoder(cell_type='lstm', attention_cell='scaled_luong', num_layers=2,
-                             num_bi_layers=1, hidden_size=128, dropout=0.0, use_residual=False,
-                             i2h_weight_initializer=None, h2h_weight_initializer=None,
-                             i2h_bias_initializer=mx.init.LSTMBias(forget_bias=1.0),
-                             h2h_bias_initializer='zeros',
-                             prefix='gnmt_', params=None):
+def get_gnmt_encoder_decoder(
+    cell_type='lstm',
+    attention_cell='scaled_luong',
+    num_layers=2,
+    num_bi_layers=1,
+    hidden_size=128,
+    dropout=0.0,
+    use_residual=False,
+    i2h_weight_initializer=None,
+    h2h_weight_initializer=None,
+    i2h_bias_initializer=mx.init.LSTMBias(forget_bias=1.0),
+    h2h_bias_initializer='zeros',
+    prefix='gnmt_',
+    params=None
+):
     """Build a pair of GNMT encoder/decoder
 
     Parameters
@@ -436,20 +489,32 @@ def get_gnmt_encoder_decoder(cell_type='lstm', attention_cell='scaled_luong', nu
     encoder : GNMTEncoder
     decoder : GNMTDecoder
     """
-    encoder = GNMTEncoder(cell_type=cell_type, num_layers=num_layers, num_bi_layers=num_bi_layers,
-                          hidden_size=hidden_size, dropout=dropout,
-                          use_residual=use_residual,
-                          i2h_weight_initializer=i2h_weight_initializer,
-                          h2h_weight_initializer=h2h_weight_initializer,
-                          i2h_bias_initializer=i2h_bias_initializer,
-                          h2h_bias_initializer=h2h_bias_initializer,
-                          prefix=prefix + 'enc_', params=params)
-    decoder = GNMTDecoder(cell_type=cell_type, attention_cell=attention_cell, num_layers=num_layers,
-                          hidden_size=hidden_size, dropout=dropout,
-                          use_residual=use_residual,
-                          i2h_weight_initializer=i2h_weight_initializer,
-                          h2h_weight_initializer=h2h_weight_initializer,
-                          i2h_bias_initializer=i2h_bias_initializer,
-                          h2h_bias_initializer=h2h_bias_initializer,
-                          prefix=prefix + 'dec_', params=params)
+    encoder = GNMTEncoder(
+        cell_type=cell_type,
+        num_layers=num_layers,
+        num_bi_layers=num_bi_layers,
+        hidden_size=hidden_size,
+        dropout=dropout,
+        use_residual=use_residual,
+        i2h_weight_initializer=i2h_weight_initializer,
+        h2h_weight_initializer=h2h_weight_initializer,
+        i2h_bias_initializer=i2h_bias_initializer,
+        h2h_bias_initializer=h2h_bias_initializer,
+        prefix=prefix + 'enc_',
+        params=params
+    )
+    decoder = GNMTDecoder(
+        cell_type=cell_type,
+        attention_cell=attention_cell,
+        num_layers=num_layers,
+        hidden_size=hidden_size,
+        dropout=dropout,
+        use_residual=use_residual,
+        i2h_weight_initializer=i2h_weight_initializer,
+        h2h_weight_initializer=h2h_weight_initializer,
+        i2h_bias_initializer=i2h_bias_initializer,
+        h2h_bias_initializer=h2h_bias_initializer,
+        prefix=prefix + 'dec_',
+        params=params
+    )
     return encoder, decoder

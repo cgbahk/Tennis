@@ -54,14 +54,28 @@ class Net(mx.gluon.HybridBlock):
     """
 
     # pylint: disable=abstract-method
-    def __init__(self, token_to_idx, output_dim, batch_size, negatives_weights,
-                 subword_function=None, num_negatives=5, smoothing=0.75,
-                 sparse_grad=True, dtype='float32', **kwargs):
+    def __init__(
+        self,
+        token_to_idx,
+        output_dim,
+        batch_size,
+        negatives_weights,
+        subword_function=None,
+        num_negatives=5,
+        smoothing=0.75,
+        sparse_grad=True,
+        dtype='float32',
+        **kwargs
+    ):
         super(Net, self).__init__(**kwargs)
 
         self._kwargs = dict(
-            input_dim=len(token_to_idx), output_dim=output_dim, dtype=dtype,
-            sparse_grad=sparse_grad, num_negatives=num_negatives)
+            input_dim=len(token_to_idx),
+            output_dim=output_dim,
+            dtype=dtype,
+            sparse_grad=sparse_grad,
+            num_negatives=num_negatives
+        )
 
         with self.name_scope():
             if subword_function is not None:
@@ -80,11 +94,16 @@ class Net(mx.gluon.HybridBlock):
                     sparse_grad=sparse_grad,
                 )
             self.embedding_out = mx.gluon.nn.Embedding(
-                len(token_to_idx), output_dim=output_dim,
-                weight_initializer=mx.init.Zero(), sparse_grad=sparse_grad,
-                dtype=dtype)
+                len(token_to_idx),
+                output_dim=output_dim,
+                weight_initializer=mx.init.Zero(),
+                sparse_grad=sparse_grad,
+                dtype=dtype
+            )
 
-            self.negatives_sampler = UnigramCandidateSampler(weights=negatives_weights**smoothing, dtype='int64')
+            self.negatives_sampler = UnigramCandidateSampler(
+                weights=negatives_weights**smoothing, dtype='int64'
+            )
 
     def __getitem__(self, tokens):
         return self.embedding[tokens]
@@ -128,17 +147,17 @@ class SG(Net):
         emb_center = self.embedding(center).expand_dims(1)
         emb_context = self.embedding_out(context).expand_dims(2)
         pred_pos = F.batch_dot(emb_center, emb_context).squeeze()
-        loss_pos = (F.relu(pred_pos) - pred_pos + F.Activation(
-            -F.abs(pred_pos), act_type='softrelu')) / (mask.sum(axis=1) + 1)
+        loss_pos = (
+            F.relu(pred_pos) - pred_pos + F.Activation(-F.abs(pred_pos), act_type='softrelu')
+        ) / (mask.sum(axis=1) + 1)
 
         # center - negatives pairs
         emb_negatives = self.embedding_out(negatives).reshape(
-            (-1, self._kwargs['num_negatives'],
-             self._kwargs['output_dim'])).swapaxes(1, 2)
+            (-1, self._kwargs['num_negatives'], self._kwargs['output_dim'])
+        ).swapaxes(1, 2)
         pred_neg = F.batch_dot(emb_center, emb_negatives).squeeze()
         mask = mask.reshape((-1, self._kwargs['num_negatives']))
-        loss_neg = (F.relu(pred_neg) + F.Activation(
-            -F.abs(pred_neg), act_type='softrelu')) * mask
+        loss_neg = (F.relu(pred_neg) + F.Activation(-F.abs(pred_neg), act_type='softrelu')) * mask
         loss_neg = loss_neg.sum(axis=1) / (mask.sum(axis=1) + 1)
 
         return loss_pos + loss_neg
@@ -208,8 +227,7 @@ class UnigramCandidateSampler(mx.gluon.HybridBlock):
 
     def __repr__(self):
         s = '{block_name}({len_weights}, {dtype})'
-        return s.format(block_name=self.__class__.__name__, len_weights=self.N,
-                        dtype=self._dtype)
+        return s.format(block_name=self.__class__.__name__, len_weights=self.N, dtype=self._dtype)
 
     # pylint: disable=arguments-differ, unused-argument
     def hybrid_forward(self, F, candidates_like, prob, alias):
@@ -225,7 +243,7 @@ class UnigramCandidateSampler(mx.gluon.HybridBlock):
             are sampled based on the weights specified on creation of the
             UnigramCandidateSampler.
         """
-        candidates_flat = candidates_like.reshape((-1, )).astype('float64')
+        candidates_flat = candidates_like.reshape((-1,)).astype('float64')
         idx = F.random.uniform_like(candidates_flat, low=0, high=self.N).floor()
         prob = F.gather_nd(prob, idx.reshape((1, -1)))
         alias = F.gather_nd(alias, idx.reshape((1, -1)))

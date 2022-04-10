@@ -25,16 +25,19 @@ import gluonnlp as nlp
 import gluonnlp.data.batchify as btf
 
 
-def get_dataloaders(data_train, data_val, data_test, use_average_length=False, num_shards=0, num_workers=8):
+def get_dataloaders(
+    data_train, data_val, data_test, use_average_length=False, num_shards=0, num_workers=8
+):
     """Create data loaders for training/validation/test."""
     data_train_lengths = data_train.get_data_lens()  # get_data_lengths(data_train)
     data_val_lengths = data_val.get_data_lens()  # get_data_lengths(data_val)
     data_test_lengths = data_test.get_data_lens()  # get_data_lengths(data_test)
-    train_batchify_fn = btf.Tuple(btf.Pad(), btf.Pad(),
-                                  btf.Stack(dtype='float32'), btf.Stack(dtype='float32'))
-    test_batchify_fn = btf.Tuple(btf.Pad(), btf.Pad(),
-                                 btf.Stack(dtype='float32'), btf.Stack(dtype='float32'),
-                                 btf.Stack())
+    train_batchify_fn = btf.Tuple(
+        btf.Pad(), btf.Pad(), btf.Stack(dtype='float32'), btf.Stack(dtype='float32')
+    )
+    test_batchify_fn = btf.Tuple(
+        btf.Pad(), btf.Pad(), btf.Stack(dtype='float32'), btf.Stack(dtype='float32'), btf.Stack()
+    )
     target_val_lengths = list(map(lambda x: x[-1], data_val_lengths))
     target_test_lengths = list(map(lambda x: x[-1], data_test_lengths))
     if FLAGS.bucket_scheme == 'constant':
@@ -45,44 +48,56 @@ def get_dataloaders(data_train, data_val, data_test, use_average_length=False, n
         bucket_scheme = nlp.data.ExpWidthBucket(bucket_len_step=1.2)
     else:
         raise NotImplementedError
-    train_batch_sampler = nlp.data.FixedBucketSampler(lengths=data_train_lengths,
-                                                      batch_size=FLAGS.batch_size,
-                                                      num_buckets=FLAGS.num_buckets,
-                                                      ratio=FLAGS.bucket_ratio,
-                                                      shuffle=True,
-                                                      use_average_length=use_average_length,
-                                                      num_shards=num_shards,
-                                                      bucket_scheme=bucket_scheme)
+    train_batch_sampler = nlp.data.FixedBucketSampler(
+        lengths=data_train_lengths,
+        batch_size=FLAGS.batch_size,
+        num_buckets=FLAGS.num_buckets,
+        ratio=FLAGS.bucket_ratio,
+        shuffle=True,
+        use_average_length=use_average_length,
+        num_shards=num_shards,
+        bucket_scheme=bucket_scheme
+    )
     logging.info('Train Batch Sampler:\n%s', train_batch_sampler.stats())
-    train_data_loader = nlp.data.ShardedDataLoader(data_train,
-                                                   batch_sampler=train_batch_sampler,
-                                                   batchify_fn=train_batchify_fn,
-                                                   num_workers=num_workers)
+    train_data_loader = nlp.data.ShardedDataLoader(
+        data_train,
+        batch_sampler=train_batch_sampler,
+        batchify_fn=train_batchify_fn,
+        num_workers=num_workers
+    )
 
-    val_batch_sampler = nlp.data.FixedBucketSampler(lengths=target_val_lengths,
-                                                    batch_size=FLAGS.test_batch_size,
-                                                    num_buckets=FLAGS.num_buckets,
-                                                    ratio=FLAGS.bucket_ratio,
-                                                    shuffle=False,
-                                                    use_average_length=use_average_length,
-                                                    bucket_scheme=bucket_scheme)
+    val_batch_sampler = nlp.data.FixedBucketSampler(
+        lengths=target_val_lengths,
+        batch_size=FLAGS.test_batch_size,
+        num_buckets=FLAGS.num_buckets,
+        ratio=FLAGS.bucket_ratio,
+        shuffle=False,
+        use_average_length=use_average_length,
+        bucket_scheme=bucket_scheme
+    )
     logging.info('Valid Batch Sampler:\n%s', val_batch_sampler.stats())
-    val_data_loader = gluon.data.DataLoader(data_val,
-                                            batch_sampler=val_batch_sampler,
-                                            batchify_fn=test_batchify_fn,
-                                            num_workers=num_workers)
-    test_batch_sampler = nlp.data.FixedBucketSampler(lengths=target_test_lengths,
-                                                     batch_size=FLAGS.test_batch_size,
-                                                     num_buckets=FLAGS.num_buckets,
-                                                     ratio=FLAGS.bucket_ratio,
-                                                     shuffle=False,
-                                                     use_average_length=use_average_length,
-                                                     bucket_scheme=bucket_scheme)
+    val_data_loader = gluon.data.DataLoader(
+        data_val,
+        batch_sampler=val_batch_sampler,
+        batchify_fn=test_batchify_fn,
+        num_workers=num_workers
+    )
+    test_batch_sampler = nlp.data.FixedBucketSampler(
+        lengths=target_test_lengths,
+        batch_size=FLAGS.test_batch_size,
+        num_buckets=FLAGS.num_buckets,
+        ratio=FLAGS.bucket_ratio,
+        shuffle=False,
+        use_average_length=use_average_length,
+        bucket_scheme=bucket_scheme
+    )
     logging.info('Test Batch Sampler:\n%s', test_batch_sampler.stats())
-    test_data_loader = gluon.data.DataLoader(data_test,
-                                             batch_sampler=test_batch_sampler,
-                                             batchify_fn=test_batchify_fn,
-                                             num_workers=num_workers)
+    test_data_loader = gluon.data.DataLoader(
+        data_test,
+        batch_sampler=test_batch_sampler,
+        batchify_fn=test_batchify_fn,
+        num_workers=num_workers
+    )
     return train_data_loader, val_data_loader, test_data_loader
 
 

@@ -16,8 +16,8 @@ def crop(imgs):
         return imgs
     h, w, _ = imgs[0].shape
     if h % 64 or w % 64:  # not evenly divided by 64
-        th = (h//64) * 64
-        tw = (w//64) * 64
+        th = (h // 64) * 64
+        tw = (w // 64) * 64
         for i in range(len(imgs)):  # crop each frame
             imgs[i] = imgs[i][(h - th) // 2:(h + th) // 2, (w - tw) // 2:(w + tw) // 2, :]
     return imgs
@@ -58,32 +58,32 @@ def make_color_wheel():
 
     # RY
     colorwheel[0:RY, 0] = 255
-    colorwheel[0:RY, 1] = np.transpose(np.floor(255*np.arange(0, RY) / RY))
+    colorwheel[0:RY, 1] = np.transpose(np.floor(255 * np.arange(0, RY) / RY))
     col += RY
 
     # YG
-    colorwheel[col:col+YG, 0] = 255 - np.transpose(np.floor(255*np.arange(0, YG) / YG))
-    colorwheel[col:col+YG, 1] = 255
+    colorwheel[col:col + YG, 0] = 255 - np.transpose(np.floor(255 * np.arange(0, YG) / YG))
+    colorwheel[col:col + YG, 1] = 255
     col += YG
 
     # GC
-    colorwheel[col:col+GC, 1] = 255
-    colorwheel[col:col+GC, 2] = np.transpose(np.floor(255*np.arange(0, GC) / GC))
+    colorwheel[col:col + GC, 1] = 255
+    colorwheel[col:col + GC, 2] = np.transpose(np.floor(255 * np.arange(0, GC) / GC))
     col += GC
 
     # CB
-    colorwheel[col:col+CB, 1] = 255 - np.transpose(np.floor(255*np.arange(0, CB) / CB))
-    colorwheel[col:col+CB, 2] = 255
+    colorwheel[col:col + CB, 1] = 255 - np.transpose(np.floor(255 * np.arange(0, CB) / CB))
+    colorwheel[col:col + CB, 2] = 255
     col += CB
 
     # BM
-    colorwheel[col:col+BM, 2] = 255
-    colorwheel[col:col+BM, 0] = np.transpose(np.floor(255*np.arange(0, BM) / BM))
-    col += + BM
+    colorwheel[col:col + BM, 2] = 255
+    colorwheel[col:col + BM, 0] = np.transpose(np.floor(255 * np.arange(0, BM) / BM))
+    col += +BM
 
     # MR
-    colorwheel[col:col+MR, 2] = 255 - np.transpose(np.floor(255 * np.arange(0, MR) / MR))
-    colorwheel[col:col+MR, 0] = 255
+    colorwheel[col:col + MR, 2] = 255 - np.transpose(np.floor(255 * np.arange(0, MR) / MR))
+    colorwheel[col:col + MR, 0] = 255
 
     return colorwheel
 
@@ -105,30 +105,30 @@ def compute_color(u, v):
     colorwheel = make_color_wheel()
     ncols = np.size(colorwheel, 0)
 
-    rad = np.sqrt(u**2+v**2)
+    rad = np.sqrt(u**2 + v**2)
 
     a = np.arctan2(-v, -u) / np.pi
 
-    fk = (a+1) / 2 * (ncols - 1) + 1
+    fk = (a + 1) / 2 * (ncols - 1) + 1
 
     k0 = np.floor(fk).astype(int)
 
     k1 = k0 + 1
-    k1[k1 == ncols+1] = 1
+    k1[k1 == ncols + 1] = 1
     f = fk - k0
 
-    for i in range(0, np.size(colorwheel,1)):
+    for i in range(0, np.size(colorwheel, 1)):
         tmp = colorwheel[:, i]
-        col0 = tmp[k0-1] / 255
-        col1 = tmp[k1-1] / 255
-        col = (1-f) * col0 + f * col1
+        col0 = tmp[k0 - 1] / 255
+        col1 = tmp[k1 - 1] / 255
+        col = (1 - f) * col0 + f * col1
 
         idx = rad <= 1
-        col[idx] = 1-rad[idx]*(1-col[idx])
+        col[idx] = 1 - rad[idx] * (1 - col[idx])
         notidx = np.logical_not(idx)
 
         col[notidx] *= 0.75
-        img[:, :, i] = np.uint8(np.floor(255 * col*(1-nanIdx)))
+        img[:, :, i] = np.uint8(np.floor(255 * col * (1 - nanIdx)))
 
     return img
 
@@ -235,13 +235,13 @@ def flow_to_image(flow):
     maxv = max(maxv, np.max(v))
     minv = min(minv, np.min(v))
 
-    rad = np.sqrt(u ** 2 + v ** 2)
+    rad = np.sqrt(u**2 + v**2)
     maxrad = max(-1, np.max(rad))
 
     # print("max flow: %.4f\nflow range:\nu = %.3f .. %.3f\nv = %.3f .. %.3f" % (maxrad, minu,maxu, minv, maxv))
 
-    u = u/(maxrad + np.finfo(float).eps)
-    v = v/(maxrad + np.finfo(float).eps)
+    u = u / (maxrad + np.finfo(float).eps)
+    v = v / (maxrad + np.finfo(float).eps)
 
     img = compute_color(u, v)
 

@@ -8,6 +8,7 @@ from utils.layers import TimeDistributed
 
 
 class FrameModel(HybridBlock):
+
     def __init__(self, backbone, num_classes=-1, swap=False, **kwargs):
         """
         A framewise model (just the backbone CNN with a single dense layer to the classes)
@@ -34,6 +35,7 @@ class FrameModel(HybridBlock):
 
 
 class TemporalPooling(HybridBlock):
+
     def __init__(self, model, num_classes=-1, pool='max', feats=False, **kwargs):
         """
         A temporal pooling model
@@ -73,6 +75,7 @@ class TemporalPooling(HybridBlock):
 
 
 class CNNRNN(HybridBlock):
+
     def __init__(self, model, num_classes=-1, hidden_size=128, type='gru', **kwargs):
         """
         A temporal CNN+RNN(GRU) model
@@ -111,6 +114,7 @@ class CNNRNN(HybridBlock):
 
 
 class Debug(HybridBlock):
+
     def __init__(self, **kwargs):
         """
         Useful model for debugging
@@ -125,6 +129,7 @@ class Debug(HybridBlock):
 
 
 class TwoStreamModel(HybridBlock):
+
     def __init__(self, model_rgb, model_flow, num_classes, **kwargs):
         """
         A two stream model (just the model CNNs concatenated before a single dense layer to the classes)

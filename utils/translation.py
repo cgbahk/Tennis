@@ -18,12 +18,12 @@
 # under the License.
 """Machine translation models and translators."""
 
-
 __all__ = ['BeamSearchTranslator']
 
 import numpy as np
 import mxnet as mx
 from gluonnlp.model import BeamSearchScorer, BeamSearchSampler
+
 
 class BeamSearchTranslator:
     """Beam Search Translator
@@ -39,6 +39,7 @@ class BeamSearchTranslator:
     max_length : int
         The maximum decoding length
     """
+
     def __init__(self, model, beam_size=1, scorer=BeamSearchScorer(), max_length=100):
         self._model = model
         self._sampler = BeamSearchSampler(
@@ -46,7 +47,8 @@ class BeamSearchTranslator:
             beam_size=beam_size,
             eos_id=model.tgt_vocab.token_to_idx[model.tgt_vocab.eos_token],
             scorer=scorer,
-            max_length=max_length)
+            max_length=max_length
+        )
 
     def _decode_logprob(self, step_input, states):
         out, states, _ = self._model.decode_step(step_input, states)
@@ -74,9 +76,14 @@ class BeamSearchTranslator:
         """
         batch_size = src_seq.shape[0]
         encoder_outputs, _ = self._model.encode(src_seq, valid_length=src_valid_length)
-        decoder_states = self._model.decoder.init_state_from_encoder(encoder_outputs,
-                                                                     src_valid_length)
-        inputs = mx.nd.full(shape=(batch_size,), ctx=src_seq.context, dtype=np.float32,
-                            val=self._model.tgt_vocab.token_to_idx[self._model.tgt_vocab.bos_token])
+        decoder_states = self._model.decoder.init_state_from_encoder(
+            encoder_outputs, src_valid_length
+        )
+        inputs = mx.nd.full(
+            shape=(batch_size,),
+            ctx=src_seq.context,
+            dtype=np.float32,
+            val=self._model.tgt_vocab.token_to_idx[self._model.tgt_vocab.bos_token]
+        )
         samples, scores, sample_valid_length = self._sampler(inputs, decoder_states)
         return samples, scores, sample_valid_length

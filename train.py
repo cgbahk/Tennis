@@ -29,73 +29,75 @@ from utils.transforms import TwoStreamNormalize
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
-flags.DEFINE_string('backbone', 'resnet18_v2',
-                    'Backbone CNN name: resnet18_v1')
-flags.DEFINE_string('backbone_from_id',  None,
-                    'Load a backbone model from a model_id, used for Temporal Pooling with fine-tuned CNN')
-flags.DEFINE_bool('freeze_backbone', False,
-                  'Freeze the backbone model')
-flags.DEFINE_string('model_id', '0000',
-                    'model identification string')
-flags.DEFINE_string('split_id', '02',
-                    'split identification string, 01: single test vid; 02: all videos have test sections')
-flags.DEFINE_integer('log_interval', 100,
-                     'Logging mini-batch interval.')
-flags.DEFINE_integer('data_shape', 512, #224,
-                     'The width and height for the input image to be cropped to.')
+flags.DEFINE_string('backbone', 'resnet18_v2', 'Backbone CNN name: resnet18_v1')
+flags.DEFINE_string(
+    'backbone_from_id', None,
+    'Load a backbone model from a model_id, used for Temporal Pooling with fine-tuned CNN'
+)
+flags.DEFINE_bool('freeze_backbone', False, 'Freeze the backbone model')
+flags.DEFINE_string('model_id', '0000', 'model identification string')
+flags.DEFINE_string(
+    'split_id', '02',
+    'split identification string, 01: single test vid; 02: all videos have test sections'
+)
+flags.DEFINE_integer('log_interval', 100, 'Logging mini-batch interval.')
+flags.DEFINE_integer(
+    'data_shape',
+    512,  #224,
+    'The width and height for the input image to be cropped to.'
+)
 
-flags.DEFINE_list('every', '1, 1, 1',
-                  'Use only every this many frames: [train, val, test] splits')
-flags.DEFINE_list('balance', 'True, False, False',
-                  'Balance the play/not class samples: [train, val, test] splits')
-flags.DEFINE_integer('window', 1,
-                     'Temporal window size of frames')
-flags.DEFINE_integer('padding', 1,
-                     'Frame*every + and - padding around the marked event boundaries: [train, val, test] splits')
-flags.DEFINE_integer('stride', 1,
-                     'Temporal stride of samples within a window')
+flags.DEFINE_list('every', '1, 1, 1', 'Use only every this many frames: [train, val, test] splits')
+flags.DEFINE_list(
+    'balance', 'True, False, False', 'Balance the play/not class samples: [train, val, test] splits'
+)
+flags.DEFINE_integer('window', 1, 'Temporal window size of frames')
+flags.DEFINE_integer(
+    'padding', 1,
+    'Frame*every + and - padding around the marked event boundaries: [train, val, test] splits'
+)
+flags.DEFINE_integer('stride', 1, 'Temporal stride of samples within a window')
 
-flags.DEFINE_integer('batch_size', 64,
-                     'Batch size for detection: higher faster, but more memory intensive.')
-flags.DEFINE_integer('epochs', 20,
-                     'How many training epochs to complete')
-flags.DEFINE_integer('num_gpus', 1,
-                     'Number of GPUs to use')
-flags.DEFINE_integer('num_workers', -1,
-                     'The number of workers should be picked so that it’s equal to number of cores on your machine '
-                     'for max parallelization. If this number is bigger than your number of cores it will use up '
-                     'a bunch of extra CPU memory. -1 is auto.')
+flags.DEFINE_integer(
+    'batch_size', 64, 'Batch size for detection: higher faster, but more memory intensive.'
+)
+flags.DEFINE_integer('epochs', 20, 'How many training epochs to complete')
+flags.DEFINE_integer('num_gpus', 1, 'Number of GPUs to use')
+flags.DEFINE_integer(
+    'num_workers', -1,
+    'The number of workers should be picked so that it’s equal to number of cores on your machine '
+    'for max parallelization. If this number is bigger than your number of cores it will use up '
+    'a bunch of extra CPU memory. -1 is auto.'
+)
 
-flags.DEFINE_float('lr', 0.001,
-                   'Learning rate.')
-flags.DEFINE_float('lr_factor', 0.75,
-                   'lr factor.')
-flags.DEFINE_list('lr_steps', '10, 20',
-                  'Epochs at which learning rate factor applied.')
-flags.DEFINE_float('momentum', 0.9,
-                   'momentum.')
-flags.DEFINE_float('wd', 0.0001,
-                   'weight decay.')
+flags.DEFINE_float('lr', 0.001, 'Learning rate.')
+flags.DEFINE_float('lr_factor', 0.75, 'lr factor.')
+flags.DEFINE_list('lr_steps', '10, 20', 'Epochs at which learning rate factor applied.')
+flags.DEFINE_float('momentum', 0.9, 'momentum.')
+flags.DEFINE_float('wd', 0.0001, 'weight decay.')
 
-flags.DEFINE_bool('vis', False,
-                  'Visualise testing results')
-flags.DEFINE_bool('save_feats', False,
-                  'save CNN features as npy files')
-flags.DEFINE_string('feats_model', None,
-                    'load CNN features as npy files from this model')
+flags.DEFINE_bool('vis', False, 'Visualise testing results')
+flags.DEFINE_bool('save_feats', False, 'save CNN features as npy files')
+flags.DEFINE_string('feats_model', None, 'load CNN features as npy files from this model')
 
-flags.DEFINE_string('flow', '',
-                    'How to use flow, "" for none, "only" for no rgb, "sixc" for six channel inp, "twos" for twostream')
-flags.DEFINE_string('temp_pool', None,
-                    'mean, max or gru.')
+flags.DEFINE_string(
+    'flow', '',
+    'How to use flow, "" for none, "only" for no rgb, "sixc" for six channel inp, "twos" for twostream'
+)
+flags.DEFINE_string('temp_pool', None, 'mean, max or gru.')
 
-flags.DEFINE_integer('max_batches', -1,  # for 0031
-                     'Only do this many batches then break')
+flags.DEFINE_integer(
+    'max_batches',
+    -1,  # for 0031
+    'Only do this many batches then break'
+)
 
 
 def main(_argv):
     FLAGS.every = [int(s) for s in FLAGS.every]
-    FLAGS.balance = [True if s.lower() == 'true' or s.lower() == 't' else False for s in FLAGS.balance]
+    FLAGS.balance = [
+        True if s.lower() == 'true' or s.lower() == 't' else False for s in FLAGS.balance
+    ]
     FLAGS.lr_steps = [int(s) for s in FLAGS.lr_steps]
 
     if FLAGS.num_workers < 0:
@@ -129,30 +131,37 @@ def main(_argv):
     transform_test = None
     balance_train = True
     if FLAGS.feats_model is None:
-        transform_train = transforms.Compose([
-            transforms.RandomResizedCrop(FLAGS.data_shape),
-            transforms.RandomFlipLeftRight(),
-            transforms.RandomColorJitter(brightness=jitter_param, contrast=jitter_param,
-                                         saturation=jitter_param),
-            transforms.RandomLighting(lighting_param),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
+        transform_train = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(FLAGS.data_shape),
+                transforms.RandomFlipLeftRight(),
+                transforms.RandomColorJitter(
+                    brightness=jitter_param, contrast=jitter_param, saturation=jitter_param
+                ),
+                transforms.RandomLighting(lighting_param),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ]
+        )
 
-        transform_test = transforms.Compose([
-            transforms.Resize(FLAGS.data_shape + 32),
-            transforms.CenterCrop(FLAGS.data_shape),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
+        transform_test = transforms.Compose(
+            [
+                transforms.Resize(FLAGS.data_shape + 32),
+                transforms.CenterCrop(FLAGS.data_shape),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ]
+        )
 
         if bool(FLAGS.flow):
 
-            transform_test = transforms.Compose([
-                transforms.Resize(FLAGS.data_shape + 32),
-                transforms.CenterCrop(FLAGS.data_shape),
-                TwoStreamNormalize()
-            ])
+            transform_test = transforms.Compose(
+                [
+                    transforms.Resize(FLAGS.data_shape + 32),
+                    transforms.CenterCrop(FLAGS.data_shape),
+                    TwoStreamNormalize()
+                ]
+            )
 
             transform_train = transform_test
 
@@ -165,32 +174,68 @@ def main(_argv):
 
     # Load datasets
     if FLAGS.temp_pool not in ['max', 'mean']:
-        train_set = TennisSet(split='train', transform=transform_train, every=FLAGS.every[0], padding=FLAGS.padding,
-                              stride=FLAGS.stride, window=FLAGS.window, model_id=FLAGS.model_id, split_id=FLAGS.split_id,
-                              balance=balance_train, flow=bool(FLAGS.flow), feats_model=FLAGS.feats_model, save_feats=FLAGS.save_feats)
+        train_set = TennisSet(
+            split='train',
+            transform=transform_train,
+            every=FLAGS.every[0],
+            padding=FLAGS.padding,
+            stride=FLAGS.stride,
+            window=FLAGS.window,
+            model_id=FLAGS.model_id,
+            split_id=FLAGS.split_id,
+            balance=balance_train,
+            flow=bool(FLAGS.flow),
+            feats_model=FLAGS.feats_model,
+            save_feats=FLAGS.save_feats
+        )
 
         logging.info(train_set)
 
-        val_set = TennisSet(split='val', transform=transform_test, every=FLAGS.every[1], padding=FLAGS.padding,
-                            stride=FLAGS.stride, window=FLAGS.window, model_id=FLAGS.model_id, split_id=FLAGS.split_id,
-                            balance=False, flow=bool(FLAGS.flow), feats_model=FLAGS.feats_model, save_feats=FLAGS.save_feats)
+        val_set = TennisSet(
+            split='val',
+            transform=transform_test,
+            every=FLAGS.every[1],
+            padding=FLAGS.padding,
+            stride=FLAGS.stride,
+            window=FLAGS.window,
+            model_id=FLAGS.model_id,
+            split_id=FLAGS.split_id,
+            balance=False,
+            flow=bool(FLAGS.flow),
+            feats_model=FLAGS.feats_model,
+            save_feats=FLAGS.save_feats
+        )
 
         logging.info(val_set)
 
-    test_set = TennisSet(split='test', transform=transform_test, every=FLAGS.every[2], padding=FLAGS.padding,
-                         stride=FLAGS.stride, window=FLAGS.window, model_id=FLAGS.model_id, split_id=FLAGS.split_id,
-                         balance=False, flow=bool(FLAGS.flow), feats_model=FLAGS.feats_model, save_feats=FLAGS.save_feats)
+    test_set = TennisSet(
+        split='test',
+        transform=transform_test,
+        every=FLAGS.every[2],
+        padding=FLAGS.padding,
+        stride=FLAGS.stride,
+        window=FLAGS.window,
+        model_id=FLAGS.model_id,
+        split_id=FLAGS.split_id,
+        balance=False,
+        flow=bool(FLAGS.flow),
+        feats_model=FLAGS.feats_model,
+        save_feats=FLAGS.save_feats
+    )
 
     logging.info(test_set)
 
     # Data Loaders
     if FLAGS.temp_pool not in ['max', 'mean']:
-        train_data = gluon.data.DataLoader(train_set, batch_size=FLAGS.batch_size,
-                                           shuffle=True, num_workers=FLAGS.num_workers)
-        val_data = gluon.data.DataLoader(val_set, batch_size=FLAGS.batch_size,
-                                         shuffle=False, num_workers=FLAGS.num_workers)
-    test_data = gluon.data.DataLoader(test_set, batch_size=FLAGS.batch_size,
-                                      shuffle=False, num_workers=FLAGS.num_workers)
+        train_data = gluon.data.DataLoader(
+            train_set, batch_size=FLAGS.batch_size, shuffle=True, num_workers=FLAGS.num_workers
+        )
+        val_data = gluon.data.DataLoader(
+            val_set, batch_size=FLAGS.batch_size, shuffle=False, num_workers=FLAGS.num_workers
+        )
+    test_data = gluon.data.DataLoader(
+        test_set, batch_size=FLAGS.batch_size, shuffle=False, num_workers=FLAGS.num_workers
+    )
 
     # Define Model
     model = None
@@ -199,14 +244,18 @@ def main(_argv):
             backbone_net = get_r21d(num_layers=34, n_classes=400, t=8, pretrained=True).features
         else:
             if FLAGS.flow == 'sixc':
-                backbone_net = get_model(FLAGS.backbone, pretrained=False).features  # 6 channel input, don't want pretraind
+                backbone_net = get_model(
+                    FLAGS.backbone, pretrained=False
+                ).features  # 6 channel input, don't want pretraind
             else:
                 backbone_net = get_model(FLAGS.backbone, pretrained=True).features
 
         if FLAGS.flow in ['twos', 'only']:
             if FLAGS.flow == 'only':
                 backbone_net = None
-            flow_net = get_model(FLAGS.backbone, pretrained=True).features  # todo orig exp was not pretrained flow
+            flow_net = get_model(
+                FLAGS.backbone, pretrained=True
+            ).features  # todo orig exp was not pretrained flow
             model = TwoStreamModel(backbone_net, flow_net, len(train_set.classes))
         elif FLAGS.backbone == 'rdnet':
             model = FrameModel(backbone_net, len(train_set.classes), swap=True)
@@ -218,22 +267,37 @@ def main(_argv):
     if FLAGS.window > 1:  # Time Distributed RNN
 
         if FLAGS.backbone_from_id and model is not None:
-            if os.path.exists(os.path.join('models', 'vision', 'experiments', FLAGS.backbone_from_id)):
-                files = os.listdir(os.path.join('models', 'vision', 'experiments', FLAGS.backbone_from_id))
+            if os.path.exists(os.path.join('models', 'vision', 'experiments',
+                                           FLAGS.backbone_from_id)):
+                files = os.listdir(
+                    os.path.join('models', 'vision', 'experiments', FLAGS.backbone_from_id)
+                )
                 files = [f for f in files if f[-7:] == '.params']
                 if len(files) > 0:
                     files = sorted(files, reverse=True)  # put latest model first
                     model_name = files[0]
-                    model.load_parameters(os.path.join('models', 'vision', 'experiments', FLAGS.backbone_from_id, model_name))
-                    logging.info('Loaded backbone params: {}'.format(os.path.join('models', 'vision', 'experiments',
-                                                                                  FLAGS.backbone_from_id, model_name)))
+                    model.load_parameters(
+                        os.path.join(
+                            'models', 'vision', 'experiments', FLAGS.backbone_from_id, model_name
+                        )
+                    )
+                    logging.info(
+                        'Loaded backbone params: {}'.format(
+                            os.path.join(
+                                'models', 'vision', 'experiments', FLAGS.backbone_from_id,
+                                model_name
+                            )
+                        )
+                    )
 
         if FLAGS.freeze_backbone and model is not None:
             for param in model.collect_params().values():
                 param.grad_req = 'null'
 
         if FLAGS.temp_pool in ['gru', 'lstm']:
-            model = CNNRNN(model, num_classes=len(test_set.classes), type=FLAGS.temp_pool, hidden_size=128)
+            model = CNNRNN(
+                model, num_classes=len(test_set.classes), type=FLAGS.temp_pool, hidden_size=128
+            )
         elif FLAGS.temp_pool in ['mean', 'max']:
             pass
         else:
@@ -249,11 +313,19 @@ def main(_argv):
         num_channels = 6
     if FLAGS.feats_model is None:
         if FLAGS.window == 1:
-            logging.info(model.summary(mx.nd.ndarray.ones(shape=(1,
-                                                                 num_channels, FLAGS.data_shape, FLAGS.data_shape))))
+            logging.info(
+                model.summary(
+                    mx.nd.ndarray.ones(shape=(1, num_channels, FLAGS.data_shape, FLAGS.data_shape))
+                )
+            )
         else:
-            logging.info(model.summary(mx.nd.ndarray.ones(shape=(1, FLAGS.window,
-                                                                 num_channels, FLAGS.data_shape, FLAGS.data_shape))))
+            logging.info(
+                model.summary(
+                    mx.nd.ndarray.ones(
+                        shape=(1, FLAGS.window, num_channels, FLAGS.data_shape, FLAGS.data_shape)
+                    )
+                )
+            )
     else:
         if FLAGS.window == 1:
             logging.info(model.summary(mx.nd.ndarray.ones(shape=(1, 4096))))
@@ -266,7 +338,8 @@ def main(_argv):
     if FLAGS.save_feats:
         best_score = -1
         best_epoch = -1
-        with open(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, 'scores.txt'), 'r') as f:
+        with open(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, 'scores.txt'),
+                  'r') as f:
             lines = f.readlines()
             lines = [line.rstrip().split() for line in lines]
             for ep, sc in lines:
@@ -275,9 +348,20 @@ def main(_argv):
                     best_score = float(sc)
 
         logging.info('Testing best model from Epoch %d with score of %f' % (best_epoch, best_score))
-        model.load_parameters(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, "{:04d}.params".format(best_epoch)))
-        logging.info('Loaded model params: {}'.format(
-            os.path.join('models', 'vision', 'experiments', FLAGS.model_id, "{:04d}.params".format(best_epoch))))
+        model.load_parameters(
+            os.path.join(
+                'models', 'vision', 'experiments', FLAGS.model_id,
+                "{:04d}.params".format(best_epoch)
+            )
+        )
+        logging.info(
+            'Loaded model params: {}'.format(
+                os.path.join(
+                    'models', 'vision', 'experiments', FLAGS.model_id,
+                    "{:04d}.params".format(best_epoch)
+                )
+            )
+        )
 
         for data, sett in zip([train_data, val_data, test_data], [train_set, val_set, test_set]):
             save_features(model, data, sett, ctx)
@@ -291,40 +375,70 @@ def main(_argv):
             files = sorted(files, reverse=True)  # put latest model first
             model_name = files[0]
             start_epoch = int(model_name.split('.')[0]) + 1
-            model.load_parameters(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, model_name), ctx=ctx)
-            logging.info('Loaded model params: {}'.format(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, model_name)))
+            model.load_parameters(
+                os.path.join('models', 'vision', 'experiments', FLAGS.model_id, model_name),
+                ctx=ctx
+            )
+            logging.info(
+                'Loaded model params: {}'.format(
+                    os.path.join('models', 'vision', 'experiments', FLAGS.model_id, model_name)
+                )
+            )
 
     # Setup the optimiser
-    trainer = gluon.Trainer(model.collect_params(), 'sgd',
-                            {'learning_rate': FLAGS.lr, 'momentum': FLAGS.momentum, 'wd': FLAGS.wd})
+    trainer = gluon.Trainer(
+        model.collect_params(), 'sgd', {
+            'learning_rate': FLAGS.lr,
+            'momentum': FLAGS.momentum,
+            'wd': FLAGS.wd
+        }
+    )
 
     # Setup Metric/s
-    metrics = [Accuracy(label_names=test_set.classes),
-               mx.metric.TopKAccuracy(5, label_names=test_set.classes),
-               Accuracy(name='accuracy_no', label_names=test_set.classes[1:], ignore_labels=[0]),
-               Accuracy(name='accuracy_o', label_names=test_set.classes[0],
-                        ignore_labels=list(range(1, len(test_set.classes)))),
-               PRF1(label_names=test_set.classes)]
+    metrics = [
+        Accuracy(label_names=test_set.classes),
+        mx.metric.TopKAccuracy(5, label_names=test_set.classes),
+        Accuracy(name='accuracy_no', label_names=test_set.classes[1:], ignore_labels=[0]),
+        Accuracy(
+            name='accuracy_o',
+            label_names=test_set.classes[0],
+            ignore_labels=list(range(1, len(test_set.classes)))
+        ),
+        PRF1(label_names=test_set.classes)
+    ]
 
-    val_metrics = [Accuracy(label_names=test_set.classes),
-                   mx.metric.TopKAccuracy(5, label_names=test_set.classes),
-                   Accuracy(name='accuracy_no', label_names=test_set.classes[1:], ignore_labels=[0]),
-                   Accuracy(name='accuracy_o', label_names=test_set.classes[0],
-                            ignore_labels=list(range(1, len(test_set.classes)))),
-                   PRF1(label_names=test_set.classes)]
+    val_metrics = [
+        Accuracy(label_names=test_set.classes),
+        mx.metric.TopKAccuracy(5, label_names=test_set.classes),
+        Accuracy(name='accuracy_no', label_names=test_set.classes[1:], ignore_labels=[0]),
+        Accuracy(
+            name='accuracy_o',
+            label_names=test_set.classes[0],
+            ignore_labels=list(range(1, len(test_set.classes)))
+        ),
+        PRF1(label_names=test_set.classes)
+    ]
 
-    test_metrics = [Accuracy(label_names=test_set.classes),
-                    mx.metric.TopKAccuracy(5, label_names=test_set.classes),
-                    Accuracy(name='accuracy_no', label_names=test_set.classes[1:], ignore_labels=[0]),
-                    Accuracy(name='accuracy_o', label_names=test_set.classes[0],
-                             ignore_labels=list(range(1, len(test_set.classes)))),
-                    PRF1(label_names=test_set.classes)]
+    test_metrics = [
+        Accuracy(label_names=test_set.classes),
+        mx.metric.TopKAccuracy(5, label_names=test_set.classes),
+        Accuracy(name='accuracy_no', label_names=test_set.classes[1:], ignore_labels=[0]),
+        Accuracy(
+            name='accuracy_o',
+            label_names=test_set.classes[0],
+            ignore_labels=list(range(1, len(test_set.classes)))
+        ),
+        PRF1(label_names=test_set.classes)
+    ]
 
     # Setup Loss/es
     loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 
     if FLAGS.temp_pool not in ['max', 'mean']:
-        model = train_model(model, train_set, train_data, metrics, val_set, val_data, val_metrics, trainer, loss_fn, start_epoch, ctx, tb_sw)
+        model = train_model(
+            model, train_set, train_data, metrics, val_set, val_data, val_metrics, trainer, loss_fn,
+            start_epoch, ctx, tb_sw
+        )
 
     # model training complete, test it
     if FLAGS.temp_pool not in ['max', 'mean']:
@@ -343,11 +457,17 @@ def main(_argv):
 
     logging.info('Testing best model from Epoch %d with score of %f' % (best_epoch, best_score))
     model.load_parameters(os.path.join(mod_path, "{:04d}.params".format(best_epoch)))
-    logging.info('Loaded model params: {}'.format(os.path.join(mod_path, "{:04d}.params".format(best_epoch))))
+    logging.info(
+        'Loaded model params: {}'.format(
+            os.path.join(mod_path, "{:04d}.params".format(best_epoch))
+        )
+    )
 
     if FLAGS.temp_pool in ['max', 'mean']:
         assert FLAGS.backbone_from_id or FLAGS.feats_model  # if we doing temporal pooling ensure that we have loaded a pretrained net
-        model = TemporalPooling(model, pool=FLAGS.temp_pool, num_classes=0, feats=FLAGS.feats_model!=None)
+        model = TemporalPooling(
+            model, pool=FLAGS.temp_pool, num_classes=0, feats=FLAGS.feats_model != None
+        )
 
     tic = time.time()
     _ = test_model(model, test_data, test_set, test_metrics, ctx, vis=FLAGS.vis)
@@ -385,15 +505,28 @@ def main(_argv):
     #     shutil.rmtree(os.path.join(test_set.output_dir, video))
 
 
-def train_model(model, train_set, train_data, metrics, val_set, val_data, val_metrics, trainer, loss_fn, start_epoch, ctx, tb_sw=None):
-    if FLAGS.epochs-start_epoch > 0:
+def train_model(
+    model,
+    train_set,
+    train_data,
+    metrics,
+    val_set,
+    val_data,
+    val_metrics,
+    trainer,
+    loss_fn,
+    start_epoch,
+    ctx,
+    tb_sw=None
+):
+    if FLAGS.epochs - start_epoch > 0:
         # Training loop
         lr_counter = 0
-        num_batches = int(len(train_set)/FLAGS.batch_size)
+        num_batches = int(len(train_set) / FLAGS.batch_size)
         for epoch in range(start_epoch, FLAGS.epochs):  # loop over epochs
             logging.info('[Starting Epoch {}]'.format(epoch))
             if epoch == FLAGS.lr_steps[lr_counter]:
-                trainer.set_learning_rate(trainer.learning_rate*FLAGS.lr_factor)
+                trainer.set_learning_rate(trainer.learning_rate * FLAGS.lr_factor)
                 lr_counter += 1
 
             tic = time.time()
@@ -407,8 +540,12 @@ def train_model(model, train_set, train_data, metrics, val_set, val_data, val_me
                 btic = time.time()
 
                 # split data across devices
-                data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-                labels = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+                data = gluon.utils.split_and_load(
+                    batch[0], ctx_list=ctx, batch_axis=0, even_split=False
+                )
+                labels = gluon.utils.split_and_load(
+                    batch[1], ctx_list=ctx, batch_axis=0, even_split=False
+                )
 
                 sum_losses = []
                 outputs = []
@@ -433,13 +570,17 @@ def train_model(model, train_set, train_data, metrics, val_set, val_data, val_me
                 # logging
                 if FLAGS.log_interval and not (i + 1) % FLAGS.log_interval:
                     str_ = '[Epoch {}][Batch {}/{}], LR: {:.2E}, Speed: {:.3f} samples/sec'.format(
-                        epoch, i, num_batches, trainer.learning_rate, FLAGS.batch_size / (time.time() - btic))
+                        epoch, i, num_batches, trainer.learning_rate,
+                        FLAGS.batch_size / (time.time() - btic)
+                    )
 
-                    str_ += ', {}={:.3f}'.format("loss:", train_sum_loss/(i*FLAGS.batch_size))
+                    str_ += ', {}={:.3f}'.format("loss:", train_sum_loss / (i * FLAGS.batch_size))
                     if tb_sw:
-                        tb_sw.add_scalar(tag='Training_loss',
-                                         scalar_value=train_sum_loss/(i*FLAGS.batch_size),
-                                         global_step=(epoch * len(train_data) + i))
+                        tb_sw.add_scalar(
+                            tag='Training_loss',
+                            scalar_value=train_sum_loss / (i * FLAGS.batch_size),
+                            global_step=(epoch * len(train_data) + i)
+                        )
                     for metric in metrics:
                         result = metric.get()
                         if not isinstance(result, list):
@@ -447,9 +588,11 @@ def train_model(model, train_set, train_data, metrics, val_set, val_data, val_me
                         for res in result:
                             str_ += ', {}={:.3f}'.format(res[0], res[1])
                             if tb_sw:
-                                tb_sw.add_scalar(tag='Training_{}'.format(res[0]),
-                                                 scalar_value=float(res[1]),
-                                                 global_step=(epoch * len(train_data) + i))
+                                tb_sw.add_scalar(
+                                    tag='Training_{}'.format(res[0]),
+                                    scalar_value=float(res[1]),
+                                    global_step=(epoch * len(train_data) + i)
+                                )
                     logging.info(str_)
 
             # Format end of epoch logging string getting metrics along the way
@@ -481,20 +624,31 @@ def train_model(model, train_set, train_data, metrics, val_set, val_data, val_me
                 for res in result:
                     str_ += ', Val_{}={:.3f}'.format(res[0], res[1])
                     if tb_sw:
-                        tb_sw.add_scalar(tag='Val_{}'.format(res[0]),
-                                         scalar_value=float(res[1]),
-                                         global_step=(epoch * len(train_data)))
+                        tb_sw.add_scalar(
+                            tag='Val_{}'.format(res[0]),
+                            scalar_value=float(res[1]),
+                            global_step=(epoch * len(train_data))
+                        )
                     if res[0] == 'AVG_NB_f1':
-                        with open(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, 'scores.txt'), 'a') as f:
-                            f.write(str(epoch)+'\t'+str(float(res[1]))+'\n')
+                        with open(os.path.join('models', 'vision', 'experiments', FLAGS.model_id,
+                                               'scores.txt'), 'a') as f:
+                            f.write(str(epoch) + '\t' + str(float(res[1])) + '\n')
 
                 metric.reset()
 
-            str_ += ', Epoch Time: {:.1f}, Val Time: {:.1f}'.format(time.time() - tic, time.time() - vtic)
+            str_ += ', Epoch Time: {:.1f}, Val Time: {:.1f}'.format(
+                time.time() - tic,
+                time.time() - vtic
+            )
 
             logging.info(str_)
 
-            model.save_parameters(os.path.join('models', 'vision', 'experiments', FLAGS.model_id, "{:04d}.params".format(epoch)))
+            model.save_parameters(
+                os.path.join(
+                    'models', 'vision', 'experiments', FLAGS.model_id,
+                    "{:04d}.params".format(epoch)
+                )
+            )
 
     return model
 
@@ -528,7 +682,7 @@ def test_model(net, loader, dataset, metrics, ctx, vis=False):
 
 
 def save_features(net, loader, dataset, ctx):
-    for batch in tqdm(loader, desc='saving features', total=int(len(dataset)/FLAGS.batch_size)):
+    for batch in tqdm(loader, desc='saving features', total=int(len(dataset) / FLAGS.batch_size)):
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
         # labels = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
         idxs = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0, even_split=False)

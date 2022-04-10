@@ -8,7 +8,6 @@ Does the following:
 
 """
 
-
 from absl import app, flags, logging
 from absl.flags import FLAGS
 import json
@@ -16,8 +15,12 @@ import os
 from tqdm import tqdm
 
 MAX_SETS = 5
-HANDER = [['Federer', 'Williams', 'Sharapova', 'Djokovic', 'Tsonga', 'Zvonareva', 'Del Potro', 'Azarenka'],
-          ['Nadal']]  # [RIGHT,LEFT] handedness of players
+HANDER = [
+    [
+        'Federer', 'Williams', 'Sharapova', 'Djokovic', 'Tsonga', 'Zvonareva', 'Del Potro',
+        'Azarenka'
+    ], ['Nadal']
+]  # [RIGHT,LEFT] handedness of players
 
 
 def generate_slices(annotations_dir, slices_dir, videos):
@@ -49,8 +52,10 @@ def generate_slices(annotations_dir, slices_dir, videos):
 
         # ensure the database contains the needed information
         if "classes" not in database.keys() or "USE" not in database["classes"].keys():
-            logging.error("Database {} is not structured correctly, can't extract.\n"
-                          "Needs 'classes' and 'USE' categories.".format(annotation_path))
+            logging.error(
+                "Database {} is not structured correctly, can't extract.\n"
+                "Needs 'classes' and 'USE' categories.".format(annotation_path)
+            )
             return None
 
         # make the slices directory if it doesn't exist
@@ -78,7 +83,9 @@ def generate_points_list(database):
 
     points = []
     for point in database['classes']['Point']:
-        point_score = str(point['custom']['Score'])  # the point score after point as 30-0 or 40-A or Game or Deuce etc.
+        point_score = str(
+            point['custom']['Score']
+        )  # the point score after point as 30-0 or 40-A or Game or Deuce etc.
         point_start = int(point['start'])  # the frame the point starts
         point_end = int(point['end'])  # the frame the point ends
 
@@ -173,8 +180,10 @@ def generalise_jsons(annotations_dir, generalised_dir, videos):
 
             # couldn't fine which point this serve belongs to!! oh no! these need to be fixed!!!
             if found is None:
-                logging.error("Error in annotation file: {}\nEnsure all serve and hit events have some overlap with a "
-                              "point event.\nCaused by: {}".format(annotation_path, serve))
+                logging.error(
+                    "Error in annotation file: {}\nEnsure all serve and hit events have some overlap with a "
+                    "point event.\nCaused by: {}".format(annotation_path, serve)
+                )
                 return None
 
             set_split = found[0].split('-')
@@ -227,8 +236,10 @@ def generalise_jsons(annotations_dir, generalised_dir, videos):
 
             # couldn't fine which point this hit belongs to!! oh no! these need to be fixed!!!
             if found is None:
-                logging.error("Error in annotation file: {}\nEnsure all serve and hit events have some overlap with a "
-                              "point event.\nCaused by: {}".format(annotation_path, hit))
+                logging.error(
+                    "Error in annotation file: {}\nEnsure all serve and hit events have some overlap with a "
+                    "point event.\nCaused by: {}".format(annotation_path, hit)
+                )
                 return None
 
             set_split = found[0].split('-')
@@ -412,23 +423,40 @@ def generate_labels(generalised_dir, labels_dir, videos):
 
 def main(_argv):
 
-    generate_slices(annotations_dir=FLAGS.annotations_dir, slices_dir=FLAGS.slices_dir, videos=FLAGS.videos)
-    generalise_jsons(annotations_dir=FLAGS.annotations_dir, generalised_dir=FLAGS.generalised_dir, videos=FLAGS.videos)
-    generate_labels(generalised_dir=FLAGS.generalised_dir, labels_dir=FLAGS.labels_dir, videos=FLAGS.videos)
+    generate_slices(
+        annotations_dir=FLAGS.annotations_dir, slices_dir=FLAGS.slices_dir, videos=FLAGS.videos
+    )
+    generalise_jsons(
+        annotations_dir=FLAGS.annotations_dir,
+        generalised_dir=FLAGS.generalised_dir,
+        videos=FLAGS.videos
+    )
+    generate_labels(
+        generalised_dir=FLAGS.generalised_dir, labels_dir=FLAGS.labels_dir, videos=FLAGS.videos
+    )
 
 
 if __name__ == "__main__":
 
-    flags.DEFINE_string('annotations_dir', 'data/annotations',
-                        'Path to the annotations directory, where the raw annotation .json files are')
-    flags.DEFINE_string('generalised_dir', 'data/annotations/generalised',
-                        'Path to the annotations directory, where the generalised annotation .json files are')
-    flags.DEFINE_string('slices_dir', 'data/annotations/slices',
-                        'Path to the slices directory, where the .txt files will be saved')
-    flags.DEFINE_string('labels_dir', 'data/annotations/labels',
-                        'Path to the labels directory, where the .txt files will be saved')
-    flags.DEFINE_list('videos', 'V006,V007,V008,V009,V010',
-                      'List of json files to do, without their extension')
+    flags.DEFINE_string(
+        'annotations_dir', 'data/annotations',
+        'Path to the annotations directory, where the raw annotation .json files are'
+    )
+    flags.DEFINE_string(
+        'generalised_dir', 'data/annotations/generalised',
+        'Path to the annotations directory, where the generalised annotation .json files are'
+    )
+    flags.DEFINE_string(
+        'slices_dir', 'data/annotations/slices',
+        'Path to the slices directory, where the .txt files will be saved'
+    )
+    flags.DEFINE_string(
+        'labels_dir', 'data/annotations/labels',
+        'Path to the labels directory, where the .txt files will be saved'
+    )
+    flags.DEFINE_list(
+        'videos', 'V006,V007,V008,V009,V010', 'List of json files to do, without their extension'
+    )
 
     try:
         app.run(main)

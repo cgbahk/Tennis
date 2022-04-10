@@ -2,9 +2,12 @@ import mxnet as mx
 
 
 class TwoStreamNormalize(object):
-    def __init__(self,
-                 mean=(0.485, 0.456, 0.406, 0.863, 0.871, 0.883),
-                 std=(0.229, 0.224, 0.225, 0.098, 0.087, 0.095)):
+
+    def __init__(
+        self,
+        mean=(0.485, 0.456, 0.406, 0.863, 0.871, 0.883),
+        std=(0.229, 0.224, 0.225, 0.098, 0.087, 0.095)
+    ):
 
         self._mean = mean
         self._std = std

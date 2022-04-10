@@ -17,7 +17,9 @@ class PRF1(mx.metric.EvalMetric):
             output_names (list of str): Name of predictions that should be used when updating with update_dict
             label_names (list of str): Name of labels that should be used when updating with update_dict (required)
         """
-        super(PRF1, self).__init__(name, axis=axis, output_names=output_names, label_names=label_names)
+        super(PRF1, self).__init__(
+            name, axis=axis, output_names=output_names, label_names=label_names
+        )
         assert label_names is not None, 'label_names cant be None'
         self.axis = axis
         self.label_names = label_names
@@ -74,9 +76,9 @@ class PRF1(mx.metric.EvalMetric):
             rec = self.scores[0][i] / (self.scores[2][i] + np.finfo(float).eps)
             f1 = 2 * (prec * rec) / (prec + rec + np.finfo(float).eps)
 
-            scores.append((c+'_prec', prec))
-            scores.append((c+'_rec', rec))
-            scores.append((c+'_f1', f1))
+            scores.append((c + '_prec', prec))
+            scores.append((c + '_rec', rec))
+            scores.append((c + '_f1', f1))
 
             avg_prec.append(prec)
             avg_rec.append(rec)

@@ -43,7 +43,9 @@ def process_two_images(model, files, ctx=None):
     flow = flow.squeeze()
     flow = flow.transpose(1, 2, 0)
     img = flow_to_image(flow)
-    img = imresize(img, 4.0)  # doing the bilinear interpolation on the img, NOT on flow cause was too hard :'(
+    img = imresize(
+        img, 4.0
+    )  # doing the bilinear interpolation on the img, NOT on flow cause was too hard :'(
 
     return img, flow
 
@@ -71,7 +73,7 @@ def process_imagedir(model, input_dir, output_dir=None, ctx=None):
     files.sort()
 
     for i in tqdm(range(1, len(files)), desc='Calculating Flow'):
-        img, flow = process_two_images(model, files[i-1:i+1], ctx)
+        img, flow = process_two_images(model, files[i - 1:i + 1], ctx)
         dir, file = os.path.split(files[i])
         if int(file[:-4]) == 0:  # skip first frame of any video (assume numbered 0s)
             continue
@@ -99,7 +101,7 @@ def process_video(model, input_path, output_path=None, ctx=None):
     capture = cv2.VideoCapture(input_path)
     frames = []
     while_safety = 0
-    while len(frames) < int(capture.get(cv2.CAP_PROP_FRAME_COUNT))-1:
+    while len(frames) < int(capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1:
         _, image = capture.read()  # read an image from the capture
 
         if while_safety > 500:  # break the while if our safety maxs out at 500
@@ -120,12 +122,12 @@ def process_video(model, input_path, output_path=None, ctx=None):
         output_path = input_path[:-4] + '_flow.mp4'
 
     cropped_frames = crop(frames)
-    h, w, _= cropped_frames[0].shape
+    h, w, _ = cropped_frames[0].shape
     video = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 25, (w, h))
 
-    for i in tqdm(range(len(frames)-1), desc='Calculating Flow'):
+    for i in tqdm(range(len(frames) - 1), desc='Calculating Flow'):
         mx.nd.waitall()
-        img, flow = process_two_images(model, frames[i:i+2], ctx)
+        img, flow = process_two_images(model, frames[i:i + 2], ctx)
         video.write(img)
 
     video.release()  # release the video

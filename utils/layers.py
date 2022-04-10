@@ -6,6 +6,7 @@ from mxnet.gluon import HybridBlock
 
 
 class TimeDistributed(HybridBlock):
+
     def __init__(self, model, style='reshape', **kwargs):
         """
         A time distributed layer like that seen in Keras
@@ -27,7 +28,9 @@ class TimeDistributed(HybridBlock):
         if self._style == 'for':
             # For loop style
             x = F.swapaxes(x, 0, 1)  # swap batch and seqlen channels
-            x, _ = F.contrib.foreach(self.apply_model, x, [])  # runs on first channel, which is now seqlen
+            x, _ = F.contrib.foreach(
+                self.apply_model, x, []
+            )  # runs on first channel, which is now seqlen
             if isinstance(x, tuple):  # for handling multiple outputs
                 x = (F.swapaxes(xi, 0, 1) for xi in x)
             elif isinstance(x, list):

@@ -16,7 +16,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """BLEU."""
 import sys
 import re
@@ -24,6 +23,7 @@ import math
 import unicodedata
 from collections import Counter
 import six
+
 LIST_TYPES = (list, tuple)
 
 __all__ = ['compute_bleu']
@@ -113,6 +113,7 @@ def _tokenize_mteval_13a(segment):
 class UnicodeRegex:
     """Ad-hoc hack to recognize all punctuation and symbols.
     """
+
     def __init__(self):
         punctuation = self._property_chars('P')
         self.nondigit_punct_re = re.compile(r'([^\d])([' + punctuation + r'])')
@@ -120,8 +121,11 @@ class UnicodeRegex:
         self.symbol_re = re.compile('([' + self._property_chars('S') + '])')
 
     def _property_chars(self, prefix):
-        return ''.join(six.unichr(x) for x in range(sys.maxunicode)
-                       if unicodedata.category(six.unichr(x)).startswith(prefix))
+        return ''.join(
+            six.unichr(x)
+            for x in range(sys.maxunicode)
+            if unicodedata.category(six.unichr(x)).startswith(prefix)
+        )
 
 
 unicodeRegex = UnicodeRegex()
@@ -155,9 +159,17 @@ TOKENIZERS = {
 }
 
 
-def compute_bleu(reference_corpus_list, translation_corpus, tokenized=True,
-                 tokenizer='13a', max_n=4, smooth=False, lower_case=False,
-                 bpe=False, split_compound_word=False):
+def compute_bleu(
+    reference_corpus_list,
+    translation_corpus,
+    tokenized=True,
+    tokenizer='13a',
+    max_n=4,
+    smooth=False,
+    lower_case=False,
+    bpe=False,
+    split_compound_word=False
+):
     r"""Compute bleu score of translation against references.
 
     Parameters
@@ -231,8 +243,9 @@ def compute_bleu(reference_corpus_list, translation_corpus, tokenized=True,
             precision_numerators[n] += matches
             precision_denominators[n] += candidates
 
-    precision_fractions = [(precision_numerators[n], precision_denominators[n])
-                           for n in range(max_n)]
+    precision_fractions = [
+        (precision_numerators[n], precision_denominators[n]) for n in range(max_n)
+    ]
     smooth_const = 0
     if smooth:
         smooth_const = 1
@@ -244,7 +257,7 @@ def compute_bleu(reference_corpus_list, translation_corpus, tokenized=True,
         precision_exp_log_average = 0
 
     bp = _brevity_penalty(ref_length, trans_length)
-    bleu = precision_exp_log_average*bp
+    bleu = precision_exp_log_average * bp
 
     return bleu, precisions, bp, ref_length, trans_length
 
@@ -323,8 +336,9 @@ def _closest_ref_length(references, trans_length):
         Length of the reference that is closest to the translation.
     """
     ref_lengths = (len(reference) for reference in references)
-    closest_ref_len = min(ref_lengths,
-                          key=lambda ref_length: (abs(ref_length - trans_length), ref_length))
+    closest_ref_len = min(
+        ref_lengths, key=lambda ref_length: (abs(ref_length - trans_length), ref_length)
+    )
 
     return closest_ref_len
 

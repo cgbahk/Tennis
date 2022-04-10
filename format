@@ -1,0 +1,10 @@
+#!/bin/bash
+
+yapf \
+  --in-place \
+  --verbose \
+  --exclude venv \
+  --exclude data \
+  --exclude TemporalEventAnnotator \
+  --recursive \
+  .

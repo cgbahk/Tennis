@@ -10,10 +10,7 @@ Slightly different results attained between implementations due to BatchNorm var
 """
 from __future__ import division
 
-__all__ = ['R21DV1',
-           'BasicBlockV1',
-           'BottleneckV1',
-           'get_r21d']
+__all__ = ['R21DV1', 'BasicBlockV1', 'BottleneckV1', 'get_r21d']
 
 import math
 import os
@@ -23,37 +20,83 @@ from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 import gluoncv
 
+
 # Helpers
-def _conv3d(out_channels, kernel, strides=(1, 1, 1), padding=(0, 0, 0), dilation=(1, 1, 1),
-            groups=1, use_bias=False, prefix=''):
+def _conv3d(
+    out_channels,
+    kernel,
+    strides=(1, 1, 1),
+    padding=(0, 0, 0),
+    dilation=(1, 1, 1),
+    groups=1,
+    use_bias=False,
+    prefix=''
+):
     """A common 3dconv-bn-leakyrelu cell"""
     cell = nn.HybridSequential(prefix='3D')
-    cell.add(nn.Conv3D(out_channels, kernel_size=kernel, strides=strides, padding=padding, dilation=dilation,
-                       groups=groups, use_bias=use_bias, prefix=prefix))
+    cell.add(
+        nn.Conv3D(
+            out_channels,
+            kernel_size=kernel,
+            strides=strides,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            use_bias=use_bias,
+            prefix=prefix
+        )
+    )
     return cell
 
-def _conv21d(out_channels, kernel, strides=(1, 1, 1), padding=(0, 0, 0),
-             in_channels=0, mid_channels=None, norm_layer=nn.BatchNorm, norm_kwargs=None, prefix=''):
+
+def _conv21d(
+    out_channels,
+    kernel,
+    strides=(1, 1, 1),
+    padding=(0, 0, 0),
+    in_channels=0,
+    mid_channels=None,
+    norm_layer=nn.BatchNorm,
+    norm_kwargs=None,
+    prefix=''
+):
     """R(2+1)D from 'A Closer Look at Spatiotemporal Convolutions for Action Recognition'"""
     cell = nn.HybridSequential(prefix='R(2+1)D')
     if mid_channels is None:
-        mid_channels = int(math.floor((kernel[0] * kernel[1] * kernel[2] * in_channels * out_channels) /
-                           (kernel[1] * kernel[2] * in_channels + kernel[0] * out_channels)))
+        mid_channels = int(
+            math.floor(
+                (kernel[0] * kernel[1] * kernel[2] * in_channels * out_channels) /
+                (kernel[1] * kernel[2] * in_channels + kernel[0] * out_channels)
+            )
+        )
 
+    cell.add(
+        _conv3d(
+            mid_channels, (1, kernel[1], kernel[2]),
+            strides=(1, strides[1], strides[2]),
+            padding=(0, padding[1], padding[2]),
+            prefix=prefix + 'middle_'
+        )
+    )
 
-    cell.add(_conv3d(mid_channels, (1, kernel[1], kernel[2]),
-                     strides=(1, strides[1], strides[2]),
-                     padding=(0, padding[1], padding[2]),
-                     prefix=prefix+'middle_'))
-
-    cell.add(norm_layer(epsilon=1e-3, momentum=0.9, prefix=prefix+'middle_',
-                        **({} if norm_kwargs is None else norm_kwargs)))
+    cell.add(
+        norm_layer(
+            epsilon=1e-3,
+            momentum=0.9,
+            prefix=prefix + 'middle_',
+            **({} if norm_kwargs is None else norm_kwargs)
+        )
+    )
     cell.add(nn.LeakyReLU(0.0))
 
-    cell.add(_conv3d(out_channels, (kernel[0], 1, 1),
-                     strides=(strides[0], 1, 1),
-                     padding=(padding[0], 0, 0),
-                     prefix=prefix))
+    cell.add(
+        _conv3d(
+            out_channels, (kernel[0], 1, 1),
+            strides=(strides[0], 1, 1),
+            padding=(padding[0], 0, 0),
+            prefix=prefix
+        )
+    )
 
     return cell
 
@@ -74,22 +117,46 @@ class BasicBlockV1(HybridBlock):
     in_channels : int, default 0
         Number of input channels. Default is 0, to infer from the graph.
     """
+
     def __init__(self, channels, stride, downsample=False, in_channels=0, prefix='', **kwargs):
         super(BasicBlockV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix=prefix)
-        self.body.add(_conv21d(channels, kernel=[3,3,3], strides=[stride,stride,stride], padding=[1, 1, 1],
-                               in_channels=in_channels, prefix=prefix+'conv_1_'))
-        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'conv_1_'))
+        self.body.add(
+            _conv21d(
+                channels,
+                kernel=[3, 3, 3],
+                strides=[stride, stride, stride],
+                padding=[1, 1, 1],
+                in_channels=in_channels,
+                prefix=prefix + 'conv_1_'
+            )
+        )
+        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'conv_1_'))
         self.body.add(nn.LeakyReLU(0.0))
-        self.body.add(_conv21d(channels, kernel=[3,3,3], strides=[1,1,1], padding=[1, 1, 1],
-                               in_channels=channels, prefix=prefix+'conv_2_'))
-        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'conv_2_'))
+        self.body.add(
+            _conv21d(
+                channels,
+                kernel=[3, 3, 3],
+                strides=[1, 1, 1],
+                padding=[1, 1, 1],
+                in_channels=channels,
+                prefix=prefix + 'conv_2_'
+            )
+        )
+        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'conv_2_'))
 
         if downsample:
             self.downsample = nn.HybridSequential(prefix=prefix)
-            self.downsample.add(_conv3d(channels, kernel=[1,1,1], strides=[stride,stride,stride],
-                                        padding=[0, 0, 0], prefix=prefix+'down_'))
-            self.downsample.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'down_'))
+            self.downsample.add(
+                _conv3d(
+                    channels,
+                    kernel=[1, 1, 1],
+                    strides=[stride, stride, stride],
+                    padding=[0, 0, 0],
+                    prefix=prefix + 'down_'
+                )
+            )
+            self.downsample.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'down_'))
         else:
             self.downsample = None
 
@@ -103,9 +170,10 @@ class BasicBlockV1(HybridBlock):
         if self.downsample:
             residual = self.downsample(residual)
 
-        x = self.final_relu(residual+x)
+        x = self.final_relu(residual + x)
 
         return x
+
 
 class BottleneckV1(HybridBlock):
     r"""Bottleneck V1 from `"Deep Residual Learning for Image Recognition"
@@ -123,22 +191,40 @@ class BottleneckV1(HybridBlock):
     in_channels : int, default 0
         Number of input channels. Default is 0, to infer from the graph.
     """
-    def __init__(self, channels, stride, downsample=False, in_channels=0, prefix='',**kwargs):
+
+    def __init__(self, channels, stride, downsample=False, in_channels=0, prefix='', **kwargs):
         super(BottleneckV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix=prefix)
-        self.body.add(_conv3d(channels//4, [1, 1, 1], strides=[stride,stride,stride], prefix=prefix+'conv_1_'))
-        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'conv_1_'))
+        self.body.add(
+            _conv3d(
+                channels // 4, [1, 1, 1],
+                strides=[stride, stride, stride],
+                prefix=prefix + 'conv_1_'
+            )
+        )
+        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'conv_1_'))
         self.body.add(nn.LeakyReLU(0.0))
-        self.body.add(_conv21d(channels//4, [3, 3, 3], strides=[1,1,1], padding=[1,1,1],
-                               in_channels=channels//4, prefix=prefix+'conv_2_'))
-        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'conv_2_'))
+        self.body.add(
+            _conv21d(
+                channels // 4, [3, 3, 3],
+                strides=[1, 1, 1],
+                padding=[1, 1, 1],
+                in_channels=channels // 4,
+                prefix=prefix + 'conv_2_'
+            )
+        )
+        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'conv_2_'))
         self.body.add(nn.LeakyReLU(0.0))
-        self.body.add(_conv3d(channels, [1, 1, 1], strides=[1,1,1], prefix=prefix+'conv_3_'))
-        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'conv_3_'))
+        self.body.add(_conv3d(channels, [1, 1, 1], strides=[1, 1, 1], prefix=prefix + 'conv_3_'))
+        self.body.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'conv_3_'))
         if downsample:
             self.downsample = nn.HybridSequential(prefix=prefix)
-            self.downsample.add(_conv3d(channels, [1, 1, 1], strides=[stride, stride, stride], prefix=prefix+'down_'))
-            self.downsample.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix+'down_'))
+            self.downsample.add(
+                _conv3d(
+                    channels, [1, 1, 1], strides=[stride, stride, stride], prefix=prefix + 'down_'
+                )
+            )
+            self.downsample.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, prefix=prefix + 'down_'))
         else:
             self.downsample = None
 
@@ -154,6 +240,7 @@ class BottleneckV1(HybridBlock):
 
         x = self.final_relu(x + residual)
         return x
+
 
 # Nets
 class R21DV1(HybridBlock):
@@ -173,30 +260,53 @@ class R21DV1(HybridBlock):
     t : int, default 1
         number of timesteps.
     """
+
     def __init__(self, block, layers, channels, classes=400, **kwargs):
         super(R21DV1, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
             self.features = nn.HybridSequential(prefix='')
-            self.features.add(_conv21d(channels[0], [3, 7, 7], strides=[1, 2, 2], padding=[1, 3, 3],
-                                       mid_channels=45, prefix='init_'))
-            self.features.add(nn.BatchNorm(epsilon=1e-3, momentum=0.9, use_global_stats=True, prefix='init_'))
+            self.features.add(
+                _conv21d(
+                    channels[0], [3, 7, 7],
+                    strides=[1, 2, 2],
+                    padding=[1, 3, 3],
+                    mid_channels=45,
+                    prefix='init_'
+                )
+            )
+            self.features.add(
+                nn.BatchNorm(epsilon=1e-3, momentum=0.9, use_global_stats=True, prefix='init_')
+            )
             self.features.add(nn.LeakyReLU(0.0))
 
             for i, num_layer in enumerate(layers):
                 stride = 1 if i == 0 else 2
-                self.features.add(self._make_layer(block, num_layer, channels[i+1],
-                                                   stride, i+1, in_channels=channels[i]))
+                self.features.add(
+                    self._make_layer(
+                        block, num_layer, channels[i + 1], stride, i + 1, in_channels=channels[i]
+                    )
+                )
             self.avg = nn.GlobalAvgPool3D()
 
             self.dense = nn.Dense(classes, in_units=channels[-1])
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
-        layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
+        layer = nn.HybridSequential(prefix='stage%d_' % stage_index)
         with layer.name_scope():
-            layer.add(block(channels, stride, channels != in_channels, in_channels=in_channels, prefix='block1_'))
-            for i in range(layers-1):
-                layer.add(block(channels, 1, False, in_channels=channels, prefix='block%d_'%(i+2)))
+            layer.add(
+                block(
+                    channels,
+                    stride,
+                    channels != in_channels,
+                    in_channels=in_channels,
+                    prefix='block1_'
+                )
+            )
+            for i in range(layers - 1):
+                layer.add(
+                    block(channels, 1, False, in_channels=channels, prefix='block%d_' % (i + 2))
+                )
         return layer
 
     def hybrid_forward(self, F, x):
@@ -209,11 +319,20 @@ class R21DV1(HybridBlock):
 
 
 # Constructor
-def get_r21d(num_layers, n_classes, t=8, pretrained=False, ctx=mx.cpu(),
-             root=os.path.join('models', 'vision', 'rdnet', 'weights'), **kwargs):
+def get_r21d(
+    num_layers,
+    n_classes,
+    t=8,
+    pretrained=False,
+    ctx=mx.cpu(),
+    root=os.path.join('models', 'vision', 'rdnet', 'weights'),
+    **kwargs
+):
 
-    net_layers = { 34: ('basic_block', [3, 4, 6, 3], [64, 64, 128, 256, 512]),
-                  152: ('bottle_neck', [3, 8, 36, 3], [64, 256, 512, 1024, 2048])}
+    net_layers = {
+        34: ('basic_block', [3, 4, 6, 3], [64, 64, 128, 256, 512]),
+        152: ('bottle_neck', [3, 8, 36, 3], [64, 256, 512, 1024, 2048])
+    }
 
     assert num_layers in net_layers, \
         "Invalid number of layers: %d. Options are %s" % (num_layers, str(net_layers.keys()))
@@ -252,6 +371,7 @@ def get_r21d(num_layers, n_classes, t=8, pretrained=False, ctx=mx.cpu(),
 
     return net
 
+
 if __name__ == '__main__':
     from utils import convert_weights, get_test_frames
     # just for debugging
@@ -272,7 +392,7 @@ if __name__ == '__main__':
     save_path = "models/definitions/rdnet/weights/34_8_kinetics_from_ig65m_f128022400.params"
     n_layers = 34
     t = 8
-    n_classes = 400 # 487 sports, # 400 kinetics
+    n_classes = 400  # 487 sports, # 400 kinetics
 
     model = get_r21d(n_layers, n_classes, t=t, pretrained=True)
 

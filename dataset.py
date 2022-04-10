@@ -14,9 +14,27 @@ from utils.video import video_to_frames
 
 
 class TennisSet:
-    def __init__(self, root='data', captions=False, transform=None, split='train', every=1, balance=True, padding=1,
-                 stride=1, window=1, model_id='0000', split_id='02', flow=False, max_cap_len=-1, vocab=None,
-                 inference=False, feats_model=None, save_feats=False):
+
+    def __init__(
+        self,
+        root='data',
+        captions=False,
+        transform=None,
+        split='train',
+        every=1,
+        balance=True,
+        padding=1,
+        stride=1,
+        window=1,
+        model_id='0000',
+        split_id='02',
+        flow=False,
+        max_cap_len=-1,
+        vocab=None,
+        inference=False,
+        feats_model=None,
+        save_feats=False
+    ):
         self._root = root
         self._captions = captions
         self._split = split
@@ -112,21 +130,25 @@ class TennisSet:
             for s in self._samples:
                 points += 1
                 frames += int(self._points[s][2]) - int(self._points[s][1])
-            output += '{0: <8} {1: <8} {2: <5}\n'.format(points, frames, int(frames/points))
+            output += '{0: <8} {1: <8} {2: <5}\n'.format(points, frames, int(frames / points))
 
         else:
             classes = self.classes
-            frame_counts = [0]*len(classes)
+            frame_counts = [0] * len(classes)
             for s in self._samples:
                 frame_counts[classes.index(s[2])] += 1
-            event_counts = [0]*len(classes)
+            event_counts = [0] * len(classes)
             for e in self._events:
                 event_counts[classes.index(e[3])] += 1
 
-            output += '{0: <6} {1: <8} {2: <8} {3: <5}\n'.format('Class', '# Frames', '# Events', 'FperE')
+            output += '{0: <6} {1: <8} {2: <8} {3: <5}\n'.format(
+                'Class', '# Frames', '# Events', 'FperE'
+            )
             for i, c in enumerate(classes):
-                output += '{0: <6} {1: <8} {2: <8} {3: <5}\n'.format(c, frame_counts[i], event_counts[i],
-                                                                     int(frame_counts[i]/(event_counts[i]+.00001)))
+                output += '{0: <6} {1: <8} {2: <8} {3: <5}\n'.format(
+                    c, frame_counts[i], event_counts[i],
+                    int(frame_counts[i] / (event_counts[i] + .00001))
+                )
         return output
 
     def __len__(self):
@@ -134,20 +156,29 @@ class TennisSet:
 
     @staticmethod
     def get_image_path(root_dir, video_name, frame_number, chunk_size=1000):
-        chunk = int(frame_number/chunk_size)*chunk_size
-        return os.path.join(root_dir, video_name+'.mp4', '{:010d}'.format(chunk), '{:010d}.jpg'.format(frame_number))
+        chunk = int(frame_number / chunk_size) * chunk_size
+        return os.path.join(
+            root_dir, video_name + '.mp4', '{:010d}'.format(chunk),
+            '{:010d}.jpg'.format(frame_number)
+        )
 
     @staticmethod
     def get_feature_path(feat_dir, video_name, frame_number, chunk_size=1000):
         chunk = int(frame_number / chunk_size) * chunk_size
-        return os.path.join(feat_dir, video_name + '.mp4', '{:010d}'.format(chunk), '{:010d}.npy'.format(frame_number))
+        return os.path.join(
+            feat_dir, video_name + '.mp4', '{:010d}'.format(chunk),
+            '{:010d}.npy'.format(frame_number)
+        )
 
     def save_feature_path(self, idx, chunk_size=1000):
         sample = self._samples[idx]
         video_name = sample[0]
         frame_number = sample[1]
         chunk = int(frame_number / chunk_size) * chunk_size
-        return os.path.join(self.feat_dir, video_name + '.mp4', '{:010d}'.format(chunk), '{:010d}.npy'.format(frame_number))
+        return os.path.join(
+            self.feat_dir, video_name + '.mp4', '{:010d}'.format(chunk),
+            '{:010d}.npy'.format(frame_number)
+        )
 
     def __getitem__(self, idx):
         sample = self._samples[idx]
@@ -189,16 +220,20 @@ class TennisSet:
 
             if self._window > 1:
                 imgs = list()
-                window_offsets = list(range(int(-self._window/2), int(math.ceil(self._window/2))))
+                window_offsets = list(
+                    range(int(-self._window / 2), int(math.ceil(self._window / 2)))
+                )
                 window_offsets = window_offsets[:]
                 for offset in window_offsets:
                     # need to get max frame for video, has to be an 'every' frame
-                    max_frame = self._video_lengths[sample[0]]-self._every
+                    max_frame = self._video_lengths[sample[0]] - self._every
                     for i in range(self._every):
                         if (max_frame - i) % self._every == 0:
                             max_frame -= i
                             break
-                    frame = min(max(0, sample[1]+offset*self._stride), int(max_frame))  # bound the frame
+                    frame = min(
+                        max(0, sample[1] + offset * self._stride), int(max_frame)
+                    )  # bound the frame
                     if self._load_feats:
                         feats_path = self.get_feature_path(self.feat_dir, sample[0], frame)
                         img = mx.nd.array(np.load(feats_path))
@@ -243,7 +278,7 @@ class TennisSet:
             end = int(point[2])
             cap = point[5]
 
-            lens.append((int((end-start+1)/self._every), len(cap)))
+            lens.append((int((end - start + 1) / self._every), len(cap)))
         return lens
 
     @staticmethod
@@ -275,7 +310,7 @@ class TennisSet:
         #
         counts = self.class_counts()
         next_most = max(counts[1:])
-        ratio = next_most/float(counts[0]+1)
+        ratio = next_most / float(counts[0] + 1)
 
         balanced = list()
         for sample in self._samples:
@@ -294,7 +329,7 @@ class TennisSet:
             list: of ints with length of classes with the sample counts per class
         """
         classes = self.classes
-        counts = [0]*len(classes)
+        counts = [0] * len(classes)
         for s in self._samples:
             counts[classes.index(s[2])] += 1  # todo assumes frames at the moment
         return counts
@@ -318,7 +353,10 @@ class TennisSet:
             logging.info("Loading data from {}".format(splits_file))
             with open(os.path.join(self._splits_dir, split_id, self._split + '.txt'), 'r') as f:
                 lines = f.readlines()
-                samples = [[line.rstrip().split()[0], int(line.rstrip().split()[1])] for line in lines]
+                samples = [
+                    [line.rstrip().split()[0],
+                     int(line.rstrip().split()[1])] for line in lines
+                ]
 
             # make a list of the videos
             videos = set()
@@ -339,13 +377,14 @@ class TennisSet:
                             min_f = min(min_f, s[1])
                             max_f = max(max_f, s[1])
                     for i in range(1, 256):
-                        samples.append([v, min_f-i])
-                        samples.append([v, max_f+i])
-                        labels[v][min_f-i] = 'OTH'
-                        labels[v][max_f+i] = 'OTH'
+                        samples.append([v, min_f - i])
+                        samples.append([v, max_f + i])
+                        labels[v][min_f - i] = 'OTH'
+                        labels[v][max_f + i] = 'OTH'
 
             # verify images exist, if not try and extract, if not again then ignore
-            for i in range(2):  # go around twice, so if not all samples found extract, then re-check
+            for i in range(2
+                          ):  # go around twice, so if not all samples found extract, then re-check
                 samples_exist = list()
                 samples_exist_flag = True
 
@@ -354,13 +393,17 @@ class TennisSet:
                         if i == 0:  # first attempt checking all samples exist, try extracting
                             samples_exist_flag = False  # will flag to extract frames
 
-                            logging.info("{} does not exist, will extract frames."
-                                         "".format(self.get_image_path(self._frames_dir, s[0], s[1])))
+                            logging.info(
+                                "{} does not exist, will extract frames."
+                                "".format(self.get_image_path(self._frames_dir, s[0], s[1]))
+                            )
                             break
 
                         else:  # second attempt, just ignore samples
-                            logging.info("{} does not exist, will ignore sample."
-                                         "".format(self.get_image_path(self._frames_dir, s[0], s[1])))
+                            logging.info(
+                                "{} does not exist, will ignore sample."
+                                "".format(self.get_image_path(self._frames_dir, s[0], s[1]))
+                            )
                     else:
                         samples_exist.append(s)
 
@@ -368,9 +411,12 @@ class TennisSet:
                     break
                 else:
                     for video in videos:  # lets extract frames
-                        video_to_frames(video_path=os.path.join(self._videos_dir, video + '.mp4'),  # assuming .mp4
-                                        frames_dir=self._frames_dir,
-                                        chunk_size=1000)
+                        video_to_frames(
+                            video_path=os.path.join(self._videos_dir,
+                                                    video + '.mp4'),  # assuming .mp4
+                            frames_dir=self._frames_dir,
+                            chunk_size=1000
+                        )
 
             samples = samples_exist
 
@@ -433,7 +479,10 @@ class TennisSet:
 
             return samples, videos, events, points_dict
         else:
-            logging.info("Split {} does not exist, please make sure it exists to load a dataset.".format(splits_file))
+            logging.info(
+                "Split {} does not exist, please make sure it exists to load a dataset.".
+                format(splits_file)
+            )
             return None, None, None
 
     def _get_video_lengths(self):
@@ -446,10 +495,16 @@ class TennisSet:
         for sample in self._samples:
             video_name = sample[0]
             if video_name not in lengths:
-                largest_dir = sorted(os.listdir(os.path.join(self._frames_dir, video_name + '.mp4')))[-1]
-                assert largest_dir.isdigit(), "Expects the directory {} to only contain numbered subdirs".format(
-                    os.path.join(self._frames_dir, video_name + '.mp4'))
-                largest_file = sorted(os.listdir(os.path.join(self._frames_dir, video_name + '.mp4', largest_dir)))[-1]
+                largest_dir = sorted(
+                    os.listdir(os.path.join(self._frames_dir, video_name + '.mp4'))
+                )[-1]
+                assert largest_dir.isdigit(
+                ), "Expects the directory {} to only contain numbered subdirs".format(
+                    os.path.join(self._frames_dir, video_name + '.mp4')
+                )
+                largest_file = sorted(
+                    os.listdir(os.path.join(self._frames_dir, video_name + '.mp4', largest_dir))
+                )[-1]
                 lengths[video_name] = int(largest_file[:-4])
 
         return lengths
@@ -491,7 +546,7 @@ class TennisSet:
                 s1 += s[:, :, 1].std() / 256
                 s2 += s[:, :, 2].std() / 256
                 c += 1
-        return m0/c, m1/c, m2/c, s0/c, s1/c, s2/c
+        return m0 / c, m1 / c, m2 / c, s0 / c, s1 / c, s2 / c
 
 
 def main(_argv):
@@ -523,4 +578,3 @@ if __name__ == '__main__':
         app.run(main)
     except SystemExit:
         pass
-

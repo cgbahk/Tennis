@@ -16,71 +16,136 @@ class FlowNetS(HybridBlock):
     """
     FlowNet S without batch norm
     """
+
     def __init__(self, prefix='flownetS', **kwargs):
         super(FlowNetS, self).__init__(**kwargs)
 
         with self.name_scope():
-            self.conv1 = nn.HybridSequential(prefix=prefix+'_conv_1.')
-            self.conv1.add(nn.Conv2D(channels=64, kernel_size=7, strides=2, padding=3, prefix='conv1.0.'))
+            self.conv1 = nn.HybridSequential(prefix=prefix + '_conv_1.')
+            self.conv1.add(
+                nn.Conv2D(channels=64, kernel_size=7, strides=2, padding=3, prefix='conv1.0.')
+            )
             self.conv1.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU1.'))
 
             self.conv2 = nn.HybridSequential(prefix=prefix + '_conv_2.')
-            self.conv2.add(nn.Conv2D(channels=128, kernel_size=5, strides=2, padding=2, prefix='conv2.0.'))
+            self.conv2.add(
+                nn.Conv2D(channels=128, kernel_size=5, strides=2, padding=2, prefix='conv2.0.')
+            )
             self.conv2.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU2.'))
 
-            self.conv3 = nn.HybridSequential(prefix=prefix+'_conv_3.')
-            self.conv3.add(nn.Conv2D(channels=256, kernel_size=5, strides=2, padding=2, prefix='conv3.0.'))
+            self.conv3 = nn.HybridSequential(prefix=prefix + '_conv_3.')
+            self.conv3.add(
+                nn.Conv2D(channels=256, kernel_size=5, strides=2, padding=2, prefix='conv3.0.')
+            )
             self.conv3.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU3.'))
-            self.conv3.add(nn.Conv2D(channels=256, kernel_size=3, strides=1, padding=1, prefix='conv3_1.0.'))
+            self.conv3.add(
+                nn.Conv2D(channels=256, kernel_size=3, strides=1, padding=1, prefix='conv3_1.0.')
+            )
             self.conv3.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU4.'))
 
-            self.conv4 = nn.HybridSequential(prefix=prefix+'_conv_4.')
-            self.conv4.add(nn.Conv2D(channels=512, kernel_size=3, strides=2, padding=1, prefix='conv4.0.'))
+            self.conv4 = nn.HybridSequential(prefix=prefix + '_conv_4.')
+            self.conv4.add(
+                nn.Conv2D(channels=512, kernel_size=3, strides=2, padding=1, prefix='conv4.0.')
+            )
             self.conv4.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU5.'))
-            self.conv4.add(nn.Conv2D(channels=512, kernel_size=3, strides=1, padding=1, prefix='conv4_1.0.'))
+            self.conv4.add(
+                nn.Conv2D(channels=512, kernel_size=3, strides=1, padding=1, prefix='conv4_1.0.')
+            )
             self.conv4.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU6.'))
 
-            self.conv5 = nn.HybridSequential(prefix=prefix+'_conv_5.')
-            self.conv5.add(nn.Conv2D(channels=512, kernel_size=3, strides=2, padding=1, prefix='conv5.0.'))
+            self.conv5 = nn.HybridSequential(prefix=prefix + '_conv_5.')
+            self.conv5.add(
+                nn.Conv2D(channels=512, kernel_size=3, strides=2, padding=1, prefix='conv5.0.')
+            )
             self.conv5.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU7.'))
-            self.conv5.add(nn.Conv2D(channels=512, kernel_size=3, strides=1, padding=1, prefix='conv5_1.0.'))
+            self.conv5.add(
+                nn.Conv2D(channels=512, kernel_size=3, strides=1, padding=1, prefix='conv5_1.0.')
+            )
             self.conv5.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU8.'))
 
-            self.conv6 = nn.HybridSequential(prefix=prefix+'_conv_6.')
-            self.conv6.add(nn.Conv2D(channels=1024, kernel_size=3, strides=2, padding=1, prefix='conv6.0.'))
+            self.conv6 = nn.HybridSequential(prefix=prefix + '_conv_6.')
+            self.conv6.add(
+                nn.Conv2D(channels=1024, kernel_size=3, strides=2, padding=1, prefix='conv6.0.')
+            )
             self.conv6.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU9.'))
-            self.conv6.add(nn.Conv2D(channels=1024, kernel_size=3, strides=1, padding=1, prefix='conv6_1.0.'))
+            self.conv6.add(
+                nn.Conv2D(channels=1024, kernel_size=3, strides=1, padding=1, prefix='conv6_1.0.')
+            )
             self.conv6.add(nn.LeakyReLU(alpha=0.1, prefix='ReLU10.'))
 
-            self.predict_flow6 = nn.Conv2D(channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow6.')
-            self.deconv5 = nn.Conv2DTranspose(channels=512, kernel_size=4, strides=2, padding=1, prefix='deconv5.0.')
+            self.predict_flow6 = nn.Conv2D(
+                channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow6.'
+            )
+            self.deconv5 = nn.Conv2DTranspose(
+                channels=512, kernel_size=4, strides=2, padding=1, prefix='deconv5.0.'
+            )
             self.relu11 = nn.LeakyReLU(alpha=0.1, prefix='ReLU11.')
-            self.upsampled_flow6_to_5 = nn.Conv2DTranspose(channels=2, kernel_size=4, strides=2, padding=1,
-                                                           prefix='upsampled_flow6_to_5.', use_bias=False)
+            self.upsampled_flow6_to_5 = nn.Conv2DTranspose(
+                channels=2,
+                kernel_size=4,
+                strides=2,
+                padding=1,
+                prefix='upsampled_flow6_to_5.',
+                use_bias=False
+            )
 
-            self.predict_flow5 = nn.Conv2D(channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow5.')
-            self.deconv4 = nn.Conv2DTranspose(channels=256, kernel_size=4, strides=2, padding=1, prefix='deconv4.0.')
+            self.predict_flow5 = nn.Conv2D(
+                channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow5.'
+            )
+            self.deconv4 = nn.Conv2DTranspose(
+                channels=256, kernel_size=4, strides=2, padding=1, prefix='deconv4.0.'
+            )
             self.relu12 = nn.LeakyReLU(alpha=0.1, prefix='ReLU12.')
-            self.upsampled_flow5_to_4 = nn.Conv2DTranspose(channels=2, kernel_size=4, strides=2, padding=1,
-                                                           prefix='upsampled_flow5_to_4.', use_bias=False)
+            self.upsampled_flow5_to_4 = nn.Conv2DTranspose(
+                channels=2,
+                kernel_size=4,
+                strides=2,
+                padding=1,
+                prefix='upsampled_flow5_to_4.',
+                use_bias=False
+            )
 
-            self.predict_flow4 = nn.Conv2D(channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow4.')
-            self.deconv3 = nn.Conv2DTranspose(channels=128, kernel_size=4, strides=2, padding=1, prefix='deconv3.0.')
+            self.predict_flow4 = nn.Conv2D(
+                channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow4.'
+            )
+            self.deconv3 = nn.Conv2DTranspose(
+                channels=128, kernel_size=4, strides=2, padding=1, prefix='deconv3.0.'
+            )
             self.relu13 = nn.LeakyReLU(alpha=0.1, prefix='ReLU13.')
-            self.upsampled_flow4_to_3 = nn.Conv2DTranspose(channels=2, kernel_size=4, strides=2, padding=1,
-                                                           prefix='upsampled_flow4_to_3.', use_bias=False)
+            self.upsampled_flow4_to_3 = nn.Conv2DTranspose(
+                channels=2,
+                kernel_size=4,
+                strides=2,
+                padding=1,
+                prefix='upsampled_flow4_to_3.',
+                use_bias=False
+            )
 
-            self.predict_flow3 = nn.Conv2D(channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow3.')
-            self.deconv2 = nn.Conv2DTranspose(channels=64, kernel_size=4, strides=2, padding=1, prefix='deconv2.0.')
+            self.predict_flow3 = nn.Conv2D(
+                channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow3.'
+            )
+            self.deconv2 = nn.Conv2DTranspose(
+                channels=64, kernel_size=4, strides=2, padding=1, prefix='deconv2.0.'
+            )
             self.relu14 = nn.LeakyReLU(alpha=0.1, prefix='ReLU14.')
-            self.upsampled_flow3_to_2 = nn.Conv2DTranspose(channels=2, kernel_size=4, strides=2, padding=1,
-                                                           prefix='upsampled_flow3_to_2.', use_bias=False)
+            self.upsampled_flow3_to_2 = nn.Conv2DTranspose(
+                channels=2,
+                kernel_size=4,
+                strides=2,
+                padding=1,
+                prefix='upsampled_flow3_to_2.',
+                use_bias=False
+            )
 
-            self.predict_flow2 = nn.Conv2D(channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow2.')
+            self.predict_flow2 = nn.Conv2D(
+                channels=2, kernel_size=3, strides=1, padding=1, prefix='predict_flow2.'
+            )
 
     def hybrid_forward(self, F, x):
 
-        x = F.reshape(x, shape=(0, -3, -2))  # concat the two imgs on the channels dim b,i,c,h,w -> b,i*c,h,w
+        x = F.reshape(
+            x, shape=(0, -3, -2)
+        )  # concat the two imgs on the channels dim b,i,c,h,w -> b,i*c,h,w
 
         out_conv1 = self.conv1(x)
         out_conv2 = self.conv2(out_conv1)

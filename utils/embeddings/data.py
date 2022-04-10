@@ -1,4 +1,3 @@
-
 import functools
 import io
 import itertools
@@ -17,10 +16,19 @@ from gluonnlp.data import CorpusDataset, SimpleDatasetStream
 from .utils import print_time
 
 
-def transform_data_fasttext(data, vocab, idx_to_counts, cbow, ngram_buckets,
-                            ngrams, batch_size, window_size,
-                            frequent_token_subsampling=1E-4, dtype='float32',
-                            index_dtype='int64'):
+def transform_data_fasttext(
+    data,
+    vocab,
+    idx_to_counts,
+    cbow,
+    ngram_buckets,
+    ngrams,
+    batch_size,
+    window_size,
+    frequent_token_subsampling=1E-4,
+    dtype='float32',
+    index_dtype='int64'
+):
     """Transform a DataStream of coded DataSets to a DataStream of batches.
     Parameters
     ----------
@@ -73,13 +81,15 @@ def transform_data_fasttext(data, vocab, idx_to_counts, cbow, ngram_buckets,
         batches.
     """
     if ngram_buckets <= 0:
-        raise ValueError('Invalid ngram_buckets. Use Word2Vec training '
-                         'pipeline if not interested in ngrams.')
+        raise ValueError(
+            'Invalid ngram_buckets. Use Word2Vec training '
+            'pipeline if not interested in ngrams.'
+        )
 
     sum_counts = float(sum(idx_to_counts))
     idx_to_pdiscard = [
-        1 - math.sqrt(frequent_token_subsampling / (count / sum_counts))
-        for count in idx_to_counts]
+        1 - math.sqrt(frequent_token_subsampling / (count / sum_counts)) for count in idx_to_counts
+    ]
 
     # def subsample(shard):
     #     return [[
@@ -90,29 +100,38 @@ def transform_data_fasttext(data, vocab, idx_to_counts, cbow, ngram_buckets,
     # data = data.transform(subsample)
 
     batchify = nlp.data.batchify.EmbeddingCenterContextBatchify(
-        batch_size=batch_size, window_size=window_size, cbow=cbow,
-        weight_dtype=dtype, index_dtype=index_dtype)
+        batch_size=batch_size,
+        window_size=window_size,
+        cbow=cbow,
+        weight_dtype=dtype,
+        index_dtype=index_dtype
+    )
     data = data.transform(batchify)
 
     with print_time('prepare subwords'):
         subword_function = nlp.vocab.create_subword_function(
-            'NGramHashes', ngrams=ngrams, num_subwords=ngram_buckets)
+            'NGramHashes', ngrams=ngrams, num_subwords=ngram_buckets
+        )
 
         # Store subword indices for all words in vocabulary
         idx_to_subwordidxs = list(subword_function(vocab.idx_to_token))
         subwordidxs = np.concatenate(idx_to_subwordidxs)
-        subwordidxsptr = np.cumsum([
-            len(subwordidxs) for subwordidxs in idx_to_subwordidxs])
-        subwordidxsptr = np.concatenate([
-            np.zeros(1, dtype=np.int64), subwordidxsptr])
+        subwordidxsptr = np.cumsum([len(subwordidxs) for subwordidxs in idx_to_subwordidxs])
+        subwordidxsptr = np.concatenate([np.zeros(1, dtype=np.int64), subwordidxsptr])
         if cbow:
             subword_lookup = functools.partial(
-                cbow_lookup, subwordidxs=subwordidxs,
-                subwordidxsptr=subwordidxsptr, offset=len(vocab))
+                cbow_lookup,
+                subwordidxs=subwordidxs,
+                subwordidxsptr=subwordidxsptr,
+                offset=len(vocab)
+            )
         else:
             subword_lookup = functools.partial(
-                skipgram_lookup, subwordidxs=subwordidxs,
-                subwordidxsptr=subwordidxsptr, offset=len(vocab))
+                skipgram_lookup,
+                subwordidxs=subwordidxs,
+                subwordidxsptr=subwordidxsptr,
+                offset=len(vocab)
+            )
         max_subwordidxs_len = max(len(s) for s in idx_to_subwordidxs)
         if max_subwordidxs_len > 500:
             warnings.warn(
@@ -120,7 +139,8 @@ def transform_data_fasttext(data, vocab, idx_to_counts, cbow, ngram_buckets,
                 'has {} subwords, suggesting there are '
                 'some noisy words in your vocabulary. '
                 'You should filter out very long words '
-                'to avoid memory issues.'.format(max_subwordidxs_len))
+                'to avoid memory issues.'.format(max_subwordidxs_len)
+            )
 
     data = UnchainStream(data)
 
@@ -129,14 +149,17 @@ def transform_data_fasttext(data, vocab, idx_to_counts, cbow, ngram_buckets,
     else:
         batchify_fn = skipgram_fasttext_batch
     batchify_fn = functools.partial(
-        batchify_fn, num_tokens=len(vocab) + len(subword_function),
-        subword_lookup=subword_lookup, dtype=dtype, index_dtype=index_dtype)
+        batchify_fn,
+        num_tokens=len(vocab) + len(subword_function),
+        subword_lookup=subword_lookup,
+        dtype=dtype,
+        index_dtype=index_dtype
+    )
 
     return data, batchify_fn, subword_function
 
 
-def cbow_fasttext_batch(centers, contexts, num_tokens, subword_lookup, dtype,
-                        index_dtype):
+def cbow_fasttext_batch(centers, contexts, num_tokens, subword_lookup, dtype, index_dtype):
     """Create a batch for CBOW training objective with subwords."""
     _, contexts_row, contexts_col = contexts
     data, row, col = subword_lookup(contexts_row, contexts_col)
@@ -147,8 +170,7 @@ def cbow_fasttext_batch(centers, contexts, num_tokens, subword_lookup, dtype,
     return centers, contexts
 
 
-def skipgram_fasttext_batch(centers, contexts, num_tokens, subword_lookup,
-                            dtype, index_dtype):
+def skipgram_fasttext_batch(centers, contexts, num_tokens, subword_lookup, dtype, index_dtype):
     """Create a batch for SG training objective with subwords."""
     contexts = mx.nd.array(contexts[2], dtype=index_dtype)
     data, row, col = subword_lookup(centers)
@@ -175,12 +197,13 @@ def skipgram_batch(centers, contexts, num_tokens, dtype, index_dtype):
     indptr = mx.nd.arange(len(centers) + 1)
     centers = mx.nd.array(centers, dtype=index_dtype)
     centers_csr = mx.nd.sparse.csr_matrix(
-        (mx.nd.ones(centers.shape), centers, indptr), dtype=dtype,
-        shape=(len(centers), num_tokens))
+        (mx.nd.ones(centers.shape), centers, indptr), dtype=dtype, shape=(len(centers), num_tokens)
+    )
     return centers_csr, contexts, centers
 
 
 class UnchainStream(nlp.data.DataStream):
+
     def __init__(self, iterable):
         self._stream = iterable
 
@@ -236,13 +259,14 @@ def skipgram_lookup(indices, subwordidxs, subwordidxsptr, offset=0):
             col.append(subword + offset)
             data.append(1 / (1 + end - start))
 
-    return (np.array(data, dtype=np.float32), np.array(row, dtype=np.int64),
-            np.array(col, dtype=np.int64))
+    return (
+        np.array(data, dtype=np.float32), np.array(row,
+                                                   dtype=np.int64), np.array(col, dtype=np.int64)
+    )
 
 
 @numba_njit
-def cbow_lookup(context_row, context_col, subwordidxs, subwordidxsptr,
-                offset=0):
+def cbow_lookup(context_row, context_col, subwordidxs, subwordidxsptr, offset=0):
     """Get a sparse COO array of words and subwords for CBOW.
     Parameters
     ----------
@@ -307,5 +331,7 @@ def cbow_lookup(context_row, context_col, subwordidxs, subwordidxsptr,
         assert 0 <= row_ <= num_rows
         data[i] /= row_to_numwords[row_]
 
-    return (np.array(data, dtype=np.float32), np.array(row, dtype=np.int64),
-            np.array(col, dtype=np.int64))
+    return (
+        np.array(data, dtype=np.float32), np.array(row,
+                                                   dtype=np.int64), np.array(col, dtype=np.int64)
+    )
