@@ -35,10 +35,14 @@ flags.DEFINE_string(
 flags.DEFINE_bool('freeze_backbone', False, 'Freeze the backbone model')
 flags.DEFINE_string('model_id', '0000', 'model identification string')
 flags.DEFINE_string(
-    'split_id', '02',
-    'split identification string, 01: single test vid; 02: all videos have test sections'
+    'split_id',
+    None,
+    required=True,
+    help='split identification string, 01: single test vid; 02: all videos have test sections'
 )
-flags.DEFINE_string('split', 'test', 'the split to evaluate on either train, val, or test')
+flags.DEFINE_string(
+    'split', None, 'the split to evaluate on either train, val, or test', required=True
+)
 flags.DEFINE_integer(
     'data_shape',
     512,  # 224,
