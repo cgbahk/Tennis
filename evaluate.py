@@ -26,6 +26,7 @@ from utils.transforms import TwoStreamNormalize
 # disable autotune
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
+flags.DEFINE_string('data_root_dir', 'data', 'Root directory for dataset in predefined convention')
 flags.DEFINE_string('backbone', 'resnet18_v2', 'Backbone CNN name: resnet18_v1')
 flags.DEFINE_string(
     'backbone_from_id', None,
@@ -113,6 +114,7 @@ def main(_argv):
             )
 
     test_set = TennisSet(
+        root=FLAGS.data_root_dir,
         split=FLAGS.split,
         transform=transform_test,
         every=FLAGS.every[2],
