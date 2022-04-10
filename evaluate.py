@@ -5,7 +5,6 @@ import multiprocessing
 import mxnet as mx
 import numpy as np
 import os
-import pickle as pkl
 import sys
 import time
 from tqdm import tqdm
@@ -41,7 +40,7 @@ flags.DEFINE_string(
 flags.DEFINE_string('split', 'test', 'the split to evaluate on either train, val, or test')
 flags.DEFINE_integer(
     'data_shape',
-    512,  #224,
+    512,  # 224,
     'The width and height for the input image to be cropped to.'
 )
 
@@ -201,7 +200,7 @@ def main(_argv):
             assert FLAGS.backbone == 'rdnet'  # ensure 3d net
             assert FLAGS.window in [8, 32]
 
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.simplefilter("always")
         model.initialize()
 
@@ -317,9 +316,11 @@ def main(_argv):
     )
 
     if FLAGS.temp_pool in ['max', 'mean']:
-        assert FLAGS.backbone_from_id or FLAGS.feats_model  # if we doing temporal pooling ensure that we have loaded a pretrained net
+        # if we doing temporal pooling ensure that we have loaded a pretrained net
+        assert FLAGS.backbone_from_id or FLAGS.feats_model
+
         model = TemporalPooling(
-            model, pool=FLAGS.temp_pool, num_classes=0, feats=FLAGS.feats_model != None
+            model, pool=FLAGS.temp_pool, num_classes=0, feats=FLAGS.feats_model is not None
         )
 
     tic = time.time()
