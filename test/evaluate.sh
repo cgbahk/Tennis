@@ -26,7 +26,7 @@ fi
 python ${PYTHON_OPT} evaluate.py \
   --data_root_dir local/data \
   --num_gpus 0 \
-  --vis \
+  --video_path local/result.mp4 \
   --split_id minimal \
   --split default \
   --model_id 0042 \

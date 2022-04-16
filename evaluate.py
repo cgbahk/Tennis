@@ -71,7 +71,9 @@ flags.DEFINE_integer(
     'a bunch of extra CPU memory. -1 is auto.'
 )
 
-flags.DEFINE_bool('vis', False, 'Visualise testing results')
+flags.DEFINE_string(
+    'video_path', None, 'Path to visualise testing results. Not generate by default'
+)
 flags.DEFINE_bool('save_feats', False, 'save CNN features as npy files')
 flags.DEFINE_string('feats_model', None, 'load CNN features as npy files from this model')
 
@@ -352,15 +354,8 @@ def main(_argv):
     str_ += '  # Samples: {}, Time Taken: {:.1f}'.format(len(test_set), time.time() - tic)
     print(str_)
 
-    if FLAGS.vis:
-        visualise_events(
-            test_set,
-            results,
-            video_path=os.path.join(
-                'models', 'vision', 'experiments', FLAGS.model_id, 'results.mp4'
-            ),
-            gt=gts
-        )
+    if FLAGS.video_path:
+        visualise_events(test_set, results, video_path=FLAGS.video_path, gt=gts)
 
 
 # Testing/Validation function
