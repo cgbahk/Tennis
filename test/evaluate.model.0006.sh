@@ -9,6 +9,7 @@
 #     - default.txt
 #   - videos/
 #     - {vname}.mp4
+#   - classes
 #
 # NOTE This doesn't require features
 # NOTE Make feature with option `--save_feats`

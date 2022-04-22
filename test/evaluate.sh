@@ -12,6 +12,7 @@
 #     - default.txt
 #   - videos/
 #     - V006.mp4
+#   - classes.names
 #
 # TODO Generate features for custom video
 

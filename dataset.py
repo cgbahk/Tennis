@@ -282,16 +282,15 @@ class TennisSet:
             lens.append((int((end - start + 1) / self._every), len(cap)))
         return lens
 
-    @staticmethod
-    def _get_classes():
+    def _get_classes(self):
         """
-        Gets a list of class names as specified in the imagenetvid.names file
+        Gets a list of class names as specified in the classes name
 
         Returns:
             list : a list of strings
 
         """
-        names_file = os.path.join('data', 'classes.names')
+        names_file = os.path.join(self._root, 'classes.names')
         with open(names_file, 'r') as f:
             classes = [line.strip() for line in f.readlines()]
         return classes
