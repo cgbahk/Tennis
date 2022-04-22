@@ -16,6 +16,8 @@
 
 set -e
 
+DATA_ROOT_DIR=$1; shift
+
 PYTHON_OPT=""
 
 if [ "${ENABLE_PUDB}" = 1 ]; then
@@ -23,7 +25,7 @@ if [ "${ENABLE_PUDB}" = 1 ]; then
 fi
 
 python ${PYTHON_OPT} evaluate.py \
-  --data_root_dir local/data.bmt \
+  --data_root_dir ${DATA_ROOT_DIR} \
   --num_gpus 0 \
   --video_path local/result.mp4 \
   --split_id minimal \
