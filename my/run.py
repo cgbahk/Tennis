@@ -50,6 +50,21 @@ def cli(ctx, data_root_dir, split_dirname, split_filename, video_path):
 @cli.command()
 @click.pass_context
 def eval_with_0006(ctx):
+    """
+    Minimal preparation for this script:
+    - data/
+      - annotations/labels/
+        - vidname.txt
+      - (frames/vidname.mp4/): optional, generated if not exist
+      - splits/minimal/
+        - default.txt
+      - videos/
+        - vidname.mp4
+      - classes.names
+
+    NOTE This doesn't require features
+    NOTE Make feature with option `--save_feats`
+    """
     command = f"{sys.executable} {str(EVALUATE_SCRIPT_PATH)}"
     command += " --data_root_dir " + ctx.obj.data_root_dir
     command += " --num_gpus 0"
@@ -66,6 +81,23 @@ def eval_with_0006(ctx):
 @cli.command()
 @click.pass_context
 def eval_with_0042(ctx):
+    """
+    Minimal preparation for this script:
+    - data/
+      - annotations/labels/
+        - vidname.txt
+      - features/0006/vidname.mp4/
+        - ...
+      - frames/vidname.mp4/
+        - ...
+      - splits/minimal/
+        - default.txt
+      - videos/
+        - vidname.mp4
+      - classes.names
+
+    TODO Generate features for custom video
+    """
     command = f"{sys.executable} {str(EVALUATE_SCRIPT_PATH)}"
     command += " --data_root_dir " + ctx.obj.data_root_dir
     command += " --num_gpus 0"
