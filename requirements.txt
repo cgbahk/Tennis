@@ -3,3 +3,5 @@ mxnet
 tqdm
 gluoncv
 gluonnlp
+
+click
